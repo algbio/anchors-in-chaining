@@ -3,9 +3,6 @@ Comparing Minimizers and MEMS as anchors in chaining
 Chaining algorithm: 
 * modified ChainX, [algbio-ChainX](https://github.com/nrizzo/algbio-ChainX)
 * original ChainX, [ChainX](https://github.com/at-cg/ChainX)
-```
-./chainX -m g -q data/time_global/mutated_80_perc.fasta -t data/time_global/Chromosome_2890043_3890042_0.fasta
-```
 
 Anchors:
 * asymmetric MEM
