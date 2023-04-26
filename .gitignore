@@ -1,0 +1,12 @@
+.snakemake/
+result/
+data/
+summary/
+summary2/
+*.csv
+*.zip
+human/
+plots/
+temp/
+temp*
+tables/
