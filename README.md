@@ -11,3 +11,8 @@ Anchors:
 * Minimizers
 
 Existing implementation of chaining + different anchors [bdbwt-mem-chaining](https://github.com/algbio/bdbwt-mem-chaining)
+
+Snaemake file is run with command 
+```
+snaemake --cores 1
+```
