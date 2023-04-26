@@ -14,5 +14,5 @@ Existing implementation of chaining + different anchors [bdbwt-mem-chaining](htt
 
 Snaemake file is run with command 
 ```
-snaemake --cores 1
+snakemake --cores 1
 ```
