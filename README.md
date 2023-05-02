@@ -12,7 +12,7 @@ Anchors:
 
 Existing implementation of chaining + different anchors [bdbwt-mem-chaining](https://github.com/algbio/bdbwt-mem-chaining)
 
-Snaemake file is run with command 
+Snakemake file is run with command 
 ```
 snakemake --cores 1
 ```
