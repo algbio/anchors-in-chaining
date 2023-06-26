@@ -1,2 +1,0 @@
-number of bases: 131081
-number of anchors: 3245
