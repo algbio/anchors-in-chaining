@@ -1,0 +1,19 @@
+Fasta1:  data/test/reads/read44.fasta [1]
+>ACCATTCTAGGGTAAGGATGCTGAAGGCGG...
+Fasta2:  data/test/ecoli.fasta [1]
+
+>AGCTTTTCATTCTGACTGCAACGGGCAATA...
+Computation mode: 0
+Minimum Depth / K-mer size: 22
+Window Size: 22
+Minimizer merger count: 0
+BWT Threading: 1
+Verbose Chain and Absent sections: 0
+Verbose Chain and Absent sections: 0
+Printing raw chains: 0
+Printing chains as strings: 0
+Recombining absent intervals: 0
+Using Linear RangeMaxQuery: 0
+finding mems between indexes...found mems,0...could not find significiantly large enough MEMS 
+mems took 27 seconds
+MEMs:

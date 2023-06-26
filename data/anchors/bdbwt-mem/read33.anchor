@@ -1,0 +1,51 @@
+Fasta1:  data/test/reads/read33.fasta [1]
+>GCAGCATTCCCGGCATTCGCCGGCTGGCCT...
+Fasta2:  data/test/ecoli.fasta [1]
+
+>AGCTTTTCATTCTGACTGCAACGGGCAATA...
+Computation mode: 0
+Minimum Depth / K-mer size: 22
+Window Size: 22
+Minimizer merger count: 0
+BWT Threading: 1
+Verbose Chain and Absent sections: 0
+Verbose Chain and Absent sections: 0
+Printing raw chains: 0
+Printing chains as strings: 0
+Recombining absent intervals: 0
+Using Linear RangeMaxQuery: 0
+finding mems between indexes...collected subroutine (6) elements with min depth of: 22
+total count 11
+collected subroutine (9) elements with min depth of: 22
+total count 12
+collected subroutine (1) elements with min depth of: 22
+total count 1
+collected subroutine (1) elements with min depth of: 22
+total count 1
+found mems,25...batchOutput into SA indices done...mems took 182 seconds
+MEMs:
+324,610092,54
+331,2291183,46
+332,2549449,45
+334,832274,43
+335,2714269,42
+341,3563574,36
+346,138696,31
+347,2654968,34
+347,3598395,32
+347,707835,31
+347,1113415,31
+347,2684115,31
+347,2945894,31
+347,3512509,31
+347,3740962,31
+347,3774234,31
+347,430966,30
+347,715262,30
+347,1691423,30
+347,3269720,30
+348,815584,30
+348,857615,29
+348,3676120,27
+355,1843731,24
+355,1735989,22

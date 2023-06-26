@@ -1,0 +1,36 @@
+Fasta1:  data/test/reads/read43.fasta [1]
+>CGACTGGTGGGAGCACTCCGAGACGGCGTC...
+Fasta2:  data/test/ecoli.fasta [1]
+
+>AGCTTTTCATTCTGACTGCAACGGGCAATA...
+Computation mode: 1
+Minimum Depth / K-mer size: 22
+Window Size: 22
+Minimizer merger count: 0
+BWT Threading: 1
+Verbose Chain and Absent sections: 0
+Verbose Chain and Absent sections: 0
+Printing raw chains: 0
+Printing chains as strings: 0
+Recombining absent intervals: 0
+Using Linear RangeMaxQuery: 0
+22, 22
+612	 466913
+27
+mems took 17 seconds
+MEMs:
+3921,19967,23
+3921,258079,23
+3921,279334,23
+3921,290805,23
+3921,1978674,23
+4180,20219,46
+4180,258331,46
+4180,279586,40
+4180,291057,40
+4180,1978926,46
+4373,20408,28
+4373,258520,28
+4373,279775,42
+4373,291246,42
+4373,1979115,28

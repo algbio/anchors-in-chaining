@@ -1,5 +1,5 @@
 .snakemake/
-result/
+results/
 summary/
 summary2/
 *.csv
@@ -12,3 +12,4 @@ tables/
 .ipynb_checkpoints/
 .vscode/
 helper.ipynb
+data/

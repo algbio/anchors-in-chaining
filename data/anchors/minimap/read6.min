@@ -1,0 +1,12 @@
+[M::mm_idx_gen::0.003*0.31] collected minimizers
+[M::mm_idx_gen::0.003*0.35] sorted minimizers
+[M::main::0.004*0.29] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.004*0.30] mid_occ = 10
+[M::mm_idx_stat] kmer size: 22; skip: 10; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.004*0.30] distinct minimizers: 4 (100.00% are singletons); average occurrences: 1.000; average spacing: 12.500; total length: 50
+QR	U00096.3	0	4641652
+RS	0
+SD	m6/50/CCS	26	-	162944	22	0
+SD	m6/50/CCS	35	-	162953	22	0
+SD	m6/50/CCS	37	-	162955	22	0
+SD	m6/50/CCS	43	-	162961	22	0
