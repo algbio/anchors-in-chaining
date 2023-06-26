@@ -13,3 +13,4 @@ tables/
 .vscode/
 helper.ipynb
 data/
+benchmarks/
