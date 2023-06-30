@@ -1,3 +1,5 @@
+import re
+
 #outline of pipeline
 #   compute MEM
 #   compute MUM
@@ -14,18 +16,61 @@ rule all:
         "results/mummer_mum_anchors.txt",
         "results/bdbwt_ext_mini_anchors.txt",
         "results/bdbwt_mem.txt",
-        "results/minimap_mm.txt"
+        "results/minimap_mm.txt",
+        "results/mummer-mum-summary.txt",
+        expand("results/mummer-mem/read{r}_result.txt", r = [_ for _ in range(0,n)]),
+        expand("results/bdbwt-ext-mini/result{r}.txt", r = [_ for _ in range(0,n)]),
+        expand("results/bdbwt-mem/read{r}_result.txt", r = [_ for _ in range(0,n)]),
+        expand("results/minimap/read{r}_result.txt", r = [_ for _ in range(0,n)])
 
 #MEM mummer
 rule benchmark_compute_mem_mummer:
     input: query, target
     output: "data/anchors/mummer_mem/read{r}.anchor"
     shell: "./mummer/mummer -maxmatch -l {k} {input[0]} {input[1]} >> {output}"
+
+rule process_mem_mummer_anchors:
+    input: "data/anchors/mummer_mem/read{r}.anchor"
+    output: "data/anchors/mummer_mem-tidy/read{r}.anchor"
+    run:
+        f2 = open(output[0], 'w')
+        with open(input[0]) as f:
+            write2 = False
+            for line in f:
+                if line[0] != ">":
+                    parts = line.split()
+                    f2.write(f"{int(parts[1])},{int(parts[0])},{int(parts[2])}\n")
+        f2.close()
+
+rule run_chainX_with_mem_mummer:
+    input: target, query, "data/anchors/mummer_mem-tidy/read{r}.anchor"
+    output: "results/mummer-mum/read{r}_result.txt"
+    shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
+
 #MUM mummer
 rule benchmark_compute_mum_mummer:
     input: query, target
     output: "data/anchors/mummer_mum/read{r}.anchor"
     shell: "./mummer/mummer -mum -l {k} {input[0]} {input[1]} >> {output}"
+
+rule process_mum_mummer_anchors:
+    input: "data/anchors/mummer_mum/read{r}.anchor"
+    output: "data/anchors/mummer_mum-tidy/read{r}.anchor"
+    run:
+        f2 = open(output[0], 'w')
+        with open(input[0]) as f:
+            write2 = False
+            for line in f:
+                if line[0] != ">":
+                    parts = line.split()
+                    f2.write(f"{int(parts[1])},{int(parts[0])},{int(parts[2])}\n")
+        f2.close()
+
+rule benchmark_run_chainX_with_mum_mummer:
+    input: target, query, "data/anchors/mummer_mum-tidy/read{r}.anchor"
+    output: "data/chains/mummer-mum/chain{r}.txt"
+    shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
+
 #Ext mini from bdbwt
 rule generate_config_file_for_bdbwt_extended_minimizers:
     input: query, target
@@ -55,6 +100,26 @@ rule benchmark_compute_extended_minimizers_bdbwt:
     output: "data/anchors/bdbwt-ext-mini/read{r}.anchor"
     shell: "./bdbwt-mem/main {input} >> {output}"
 
+rule process_bdbwt_extended_min_anchors:
+    input: "data/anchors/bdbwt-ext-mini/read{r}.anchor"
+    output: "data/anchors/bdbwt-ext-mini-tidy/read{r}.anchor"
+    run:
+        f2 = open(output[0], 'w')
+        with open(input[0]) as f:
+            write2 = False
+            for line in f:
+                if write2:
+                    parts = line.split(',')
+                    f2.write(f"{int(parts[1])},{int(parts[0])},{int(parts[2])}\n")
+                if line.strip() == "MEMs:":
+                    write2 = True
+        f2.close()
+
+rule benchmark_run_chainX_with_extended_minim:
+    input: target, query, "data/anchors/bdbwt-ext-mini-tidy/read{r}.anchor"
+    output: "results/bdbwt-ext-mini/result{r}.txt"
+    shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
+
 #MEM bdbwt
 rule generate_config_file_for_bdbwt_MEM:
     input: query, target
@@ -83,13 +148,56 @@ rule benchmark_compute_MEM_bdbwt:
     input: "bdbwt-mem/configs/mem/config{r}"
     output: "data/anchors/bdbwt-mem/read{r}.anchor"
     shell: "./bdbwt-mem/main {input} >> {output}"
+
+rule process_bdbwt_mem_anchors:
+    input: "data/anchors/bdbwt-mem/read{r}.anchor"
+    output: "data/anchors/bdbwt-mem-tidy/read{r}.anchor"
+    run:
+        f2 = open(output[0], 'w')
+        with open(input[0]) as f:
+            write2 = False
+            for line in f:
+                if write2:
+                    parts = line.split(',')
+                    f2.write(f"{int(parts[1])},{int(parts[0])},{int(parts[2])}\n")
+                if line.strip() == "MEMs:":
+                    write2 = True
+        f2.close()
+
+rule benchmark_run_chainX_with_bdbwt_mem:
+    input: target, query, "data/anchors/bdbwt-mem-tidy/read{r}.anchor"
+    output: "results/bdbwt-mem/read{r}_result.txt"
+    shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
+
 #minimap minimizers
 rule benchmark_compute_minimap2_minimizers:
     input: query, target
     output: "data/anchors/minimap/read{r}.min"
     shell: "./minimap2/minimap2 -k {k} {input[0]} {input[1]} --print-seeds &>> {output}"
+
+rule process_min_anchors:
+    input: "data/anchors/minimap/read{r}.min"
+    output: "data/anchors/minimap-tidy/read{r}.min"
+    run:
+        f2 = open(output[0], 'w')
+        with open(input[0]) as f:
+            for j,line in enumerate(f):
+                if line[0:2] == 'SD':
+                    parts = line.split()
+                    x = int(parts[2])
+                    y = int(parts[4])
+                    k = int(parts[5])
+
+                    f2.write(f"{y-k+1},{x-k+1},{k}\n")
+        f2.close()
+
+rule benchmark_run_chainX_with_minimizers:
+    input: target, query, "data/anchors/minimap-tidy/read{r}.min"
+    benchmark: "benchmarks/chaining/minimap_mm{r}.tsv"
+    output: "results/minimap/read{r}_result.txt"
+    shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
 #k-mer
-#stats
+#anchor stats
 rule benchmark_anchor_stats_mummer_mem:
     input: expand("data/anchors/mummer_mem/read{r}.anchor", r = [_ for _ in range(0,n)])
     output: "results/mummer_mem_anchors.txt"
@@ -194,49 +302,49 @@ rule benchmark_anchor_stats_minimap_mm:
         f2.write(f'number of anchors: {number_of_anchors}')
         f2.close()
 
-rule process_min_anchors:
-    input: "data/anchors/minimap/read{r}.min"
-    output: "data/anchors/minimap-tidy/read{r}.min"
+#draw some figures, get the results
+rule results:
+    input: expand("data/chains/mummer-mum/chain{r}.txt", r = [_ for _ in range(0,n)])
+    output: "results/mummer-mum-summary.txt"
     run:
-        f2 = open(output[0], 'w')
-        with open(input[0]) as f:
-            for j,line in enumerate(f):
-                if line[0:2] == 'SD':
-                    parts = line.split()
-                    x = int(parts[2])
-                    y = int(parts[4])
-                    k = int(parts[5])
+        summary(output[0], "mummer-mum")
 
-                    f2.write(f"{x-k+1},{y-k+1},{k}\n")
+def summary(summary_output, anchor_type):
+        input_folder = f'data/chains/{anchor_type}/'
+        number_of_chains = 0
+        total_chain_length = 0
+        for root, dirs, files in os.walk(input_folder):
+            for fi in files:
+                with open(f'data/chains/{anchor_type}/{fi}') as f:
+                    chain_length=0
+                    for line in f:
+                        try:
+                            parts = line[1:len(line)-2].split(',')
+                            x = int(parts[0])
+                            y = int(parts[1])
+                            length = int(parts[2])
+                            chain_length += length
+                            total_chain_length += length
+                        except:
+                        #if there are no anchors, just move to next read
+                            continue
+                    if chain_length > 0:
+                        number_of_chains += 1
+                
+                #find read start position, length and compute the jaccard index
+                path_to_read_file = f"data/test/reads/read{re.findall(r'\d+', fi)[0]}.fasta"
+                with open(path_to_read_file) as f:
+                    read_properties = f.readline().split(';')
+                    read_start_position = re.findall("\d+",read_properties[1])[0]
+                    read_length = re.findall("\d+", read_properties[2])[0]
+        avg_chain_length = total_chain_length/number_of_chains
+                        
+        #the correct alignment \cap the chain alignment/thecorrectalignment + the chain alignment
+        f2 = open(f"results/{anchor_type}-summary.txt", 'w')
+        f2.write(f'avg chain length: {avg_chain_length}\n')
+        f2.write(f'number of chans: {number_of_chains}\n')
+        f2.write(f'total chain lenght: {total_chain_length}\n')
         f2.close()
 
-rule run_chainX_with_minimizers:
-    input: target, query, "data/anchors/minimap-tidy/read{r}.min"
-    output: "results/minimap/read{r}_result.txt"
-    shell: "./ChainX/chainX -m g -q {input[1]} -t {input[0]} --anchors {input[2]} &>> {output}"
-
-
-
-rule process_mem_anchors:
-    input: "data/anchors/bdbwt-mini/{r}.minie"
-    output: "data/anchors/bdbwt-mini-tidy/{r}.minie"
-    run:
-        f2 = open(output[0], 'w')
-        with open(input[0]) as f:
-            write2 = False
-            for line in f:
-                print(line)
-                if write2:
-                    f2.write(line)
-                if line.strip() == "MEMs:":
-                    write2 = True
-        f2.close()
-
-rule run_chainX_with_extended_minim:
-    input: target, query, "data/anchors/bdbwt-mini-tidy/{r}.minie"
-    output: "results/bdbwt-minie/result{r}.txt"
-    shell: "./ChainX/chainX -m g -q {input[1]} -t {input[0]} --anchors {input[2]} &>> {output}"
-
-#draw some figures
 
 
