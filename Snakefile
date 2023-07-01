@@ -311,12 +311,16 @@ rule results:
 
 def summary(summary_output, anchor_type):
         input_folder = f'data/chains/{anchor_type}/'
+        jaccards = []
         number_of_chains = 0
         total_chain_length = 0
         for root, dirs, files in os.walk(input_folder):
+            
             for fi in files:
+                read_number = re.findall(r"\d+", fi)[0]
                 with open(f'data/chains/{anchor_type}/{fi}') as f:
                     chain_length=0
+                    chain= []
                     for line in f:
                         try:
                             parts = line[1:len(line)-2].split(',')
@@ -325,25 +329,41 @@ def summary(summary_output, anchor_type):
                             length = int(parts[2])
                             chain_length += length
                             total_chain_length += length
+                            chain.append((x,y,length))
                         except:
-                        #if there are no anchors, just move to next read
                             continue
                     if chain_length > 0:
                         number_of_chains += 1
-                
+                    else:
+                        continue
                 #find read start position, length and compute the jaccard index
-                path_to_read_file = f"data/test/reads/read{re.findall(r'\d+', fi)[0]}.fasta"
+                path_to_read_file = f"data/test/reads/read{read_number}.fasta"
                 with open(path_to_read_file) as f:
                     read_properties = f.readline().split(';')
-                    read_start_position = re.findall("\d+",read_properties[1])[0]
-                    read_length = re.findall("\d+", read_properties[2])[0]
+                    read_start_position = int(re.findall("\d+",read_properties[1])[0])
+                    read_length = int(re.findall("\d+", read_properties[2])[0])
+                    #compute the matches on the alignment
+                    read_end_position = read_start_position+read_length
+                    chain_coverage_of_read = 0
+                    total_coverage = 0
+                    total_coverage += read_length
+                    for (x,y,l) in chain:
+                        if x >= read_start_position and x+l <= read_end_position: #the anchor is within the orginal read
+                            chain_coverage_of_read += l
+                        else:
+                            total_coverage += l
+                jaccard = chain_coverage_of_read/total_coverage
+                jaccards.append(jaccard)
+                print(read_number)
+                print(jaccard)
         avg_chain_length = total_chain_length/number_of_chains
-                        
+        avg_accuracy = sum(jaccards)/len(jaccards)
         #the correct alignment \cap the chain alignment/thecorrectalignment + the chain alignment
         f2 = open(f"results/{anchor_type}-summary.txt", 'w')
         f2.write(f'avg chain length: {avg_chain_length}\n')
         f2.write(f'number of chans: {number_of_chains}\n')
         f2.write(f'total chain lenght: {total_chain_length}\n')
+        f2.write(f'accuracy: {avg_accuracy}')
         f2.close()
 
 
