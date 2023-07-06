@@ -1,5 +1,9 @@
 import re
 import math
+import csv
+import pandas as pd
+import numpy as np
+
 #TODO: implement the k-mer option, generate different reads?
 #outline of pipeline
 #   compute MEM
@@ -16,7 +20,8 @@ k=39 #minumum mem length, k-mer length, hox:minimap2 only allows max 28 as a k-m
 minimap_k = 28
 rule all:
     input:
-        expand("results/{anchor_type}-summary.txt", anchor_type = anchor_types)
+        expand("results/{anchor_type}-summary.txt", anchor_type = anchor_types),
+        "results/anchor-summary.csv"
         #expand("results/{anchor_type}-summary.txt", anchor_type = anchor_types)
         #expand("results/mummer-mem/read{r}_result.txt", r = [_ for _ in range(0,n)]),
         #expand("results/bdbwt-ext-mini/result{r}.txt", r = [_ for _ in range(0,n)]),
@@ -65,7 +70,7 @@ rule benchmark_compute_extended_minimizers_bdbwt:
     shell: "./bdbwt-mem/main {input} >> {output}"
 
 rule generate_config_file_for_bdbwt_MEM:
-    input: query, target
+    input: target, query
     output: "bdbwt-mem/configs/mem/config{r}"
     run:
         get_congif_bdbwt_mem(output[0], input[0], input[1], get_k_length(input[1]), 0)
@@ -136,9 +141,9 @@ rule process_bdbwt_mem_anchors:
                     write2 = True
         f2.close()
 
-rule process_min_anchors:
-    input: "data/anchors/minimap/read{r}.min"
-    output: "data/anchors/minimap-tidy/read{r}.min"
+rule process_minimap_anchors:
+    input: "data/anchors/minimap/read{r}.anchor"
+    output: "data/anchors/minimap-tidy/read{r}.anchor"
     run:
         f2 = open(output[0], 'w')
         with open(input[0]) as f:
@@ -181,54 +186,49 @@ rule benchmark_run_chainX_with_minimizers:
 
 #anchor stats
 rule anchor_stats_mummer_mem:
-    input: expand("data/anchors/mummer_mem/read{r}.anchor", r = [_ for _ in range(0,n)])
-    output: "results/mummer_mem_anchors.txt"
+    input: expand("data/anchors/mummer_mem-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
+    output: "results/anchors/mummer-mem.csv"
+    params: anchor_type = "mummer-mem"
     run:
-        sum_of_bases, number_of_anchors = anchor_stats(input)
-        f2 = open(output[0], 'w')
-        f2.write(f'number of bases: {sum_of_bases}\n')
-        f2.write(f'number of anchors: {number_of_anchors}')
-        f2.close()
+        anchor_stats(input, output[0], params.anchor_type)
 
 rule anchor_stats_mummer_mum:
-    input: expand("data/anchors/mummer_mum/read{r}.anchor", r = [_ for _ in range(0,n)])
-    output: "results/mummer_mum_anchors.txt"
+    input: expand("data/anchors/mummer_mum-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
+    output: "results/anchors/mummer-mum.csv"
+    params: anchor_type = "mummer-mum"
     run:
-        sum_of_bases, number_of_anchors = anchor_stats(input)
-        f2 = open(output[0], 'w')
-        f2.write(f'number of bases: {sum_of_bases}\n')
-        f2.write(f'number of anchors: {number_of_anchors}')
-        f2.close()
+        anchor_stats(input, output[0], params.anchor_type)
 
 rule anchor_stats_extended_minimizers:
-    input: expand("data/anchors/bdbwt-ext-mini/read{r}.anchor", r = [_ for _ in range(0,n)])
-    output: "results/bdbwt_ext_mini_anchors.txt"
+    input: expand("data/anchors/bdbwt-ext-mini-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
+    output: "results/anchors/bdbwt-ext-mini.csv"
+    params: anchor_type = "bdbwt-ext-mini"
     run:
-        sum_of_bases, number_of_anchors = anchor_stats(input)
-        f2 = open(output[0], 'w')
-        f2.write(f'number of bases: {sum_of_bases}\n')
-        f2.write(f'number of anchors: {number_of_anchors}')
-        f2.close()
+        anchor_stats(input, output[0], params.anchor_type)
 
 rule anchor_stats_bdbwt_mems:
-    input: expand("data/anchors/bdbwt-mem/read{r}.anchor", r = [_ for _ in range(0,n)])
-    output: "results/bdbwt_mem.txt"
+    input: expand("data/anchors/bdbwt-mem-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
+    output: "results/anchors/bdbwt-mem.csv"
+    params: anchor_type = "bdbwt-mem"
     run:
-        sum_of_bases, number_of_anchors = anchor_stats(input)
-        f2 = open(output[0], 'w')
-        f2.write(f'number of bases: {sum_of_bases}\n')
-        f2.write(f'number of anchors: {number_of_anchors}')
-        f2.close()
+        anchor_stats(input, output[0], params.anchor_type)
 
 rule anchor_stats_minimap_mm:
-    input: expand("data/anchors/minimap/read{r}.min", r = [_ for _ in range(0,n)])
-    output: "results/minimap_mm.txt"
+    input: expand("data/anchors/minimap-tidy/read{r}.min", r = [_ for _ in range(0,n)])
+    output: "results/anchors/minimap.csv"
+    params: anchor_type = "minimap"
     run:
-        sum_of_bases, number_of_anchors = anchor_stats(input)
-        f2 = open(output[0], 'w')
-        f2.write(f'number of bases: {sum_of_bases}\n')
-        f2.write(f'number of anchors: {number_of_anchors}')
-        f2.close()
+        anchor_stats(input, output[0], params.anchor_type)
+
+rule anchor_stats_summary:
+    input: expand("results/anchors/{anchor_type}.csv", anchor_type = anchor_types)
+    output: "results/anchor-summary.csv"
+    run:
+        dataframes = []
+        for file_path in input:
+            dataframes.append(pd.read_csv(file_path))
+        df = pd.concat(dataframes, ignore_index=True)
+        df.to_csv(output[0])
 
 #draw some figures, get the results
 rule results:
@@ -346,6 +346,7 @@ def get_k_length(read_file_path):
 def get_read_properties(read_file_path):
     with open(read_file_path) as f:
         read_properties = f.readline().split(';')
+        print(read_properties)
         read_length = int(re.findall("\d+", read_properties[1])[0])
         read_start_position = int(re.findall("\d+",read_properties[2])[0])
         read_chromosome = read_properties[3]
@@ -353,16 +354,21 @@ def get_read_properties(read_file_path):
         total_error_probability = float(re.findall("\d+.\d+", read_properties[5])[0])
         return read_length, read_start_position, read_chromosome, number_of_errors, total_error_probability
 
-def anchor_stats(input):
+def anchor_stats(input, output, anchor_type):
     sum_of_bases = 0
     number_of_anchors = 0
+    
     for file in input:
         with open(file) as f:
             for line in f:
                 try:
-                    parts = [int(x) for x in line.split(',')]
-                    sum_of_bases += parts[2]
+                    x,y,l = [int(x) for x in line.split(',')]
+                    sum_of_bases += l
                     number_of_anchors += 1
                 except:
                     continue
-    return sum_of_bases, number_of_anchors
+
+    with open(output, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['type', 'sum of bases', 'number of anchors'])
+        csvwriter.writerow([anchor_type, sum_of_bases, number_of_anchors])
