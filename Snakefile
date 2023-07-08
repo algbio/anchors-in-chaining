@@ -4,35 +4,24 @@ import csv
 import pandas as pd
 import numpy as np
 
-#TODO: implement the k-mer option, generate different reads?
-#outline of pipeline
-#   compute MEM
-#   compute MUM
-#   compute minimizers
-#   give anchors to (chainX) aligner
+#TODO generate different reads? congigurable k value
 
 target = "data/test/ecoli.fasta"
 query = "data/test/reads/read{r}.fasta"
 anchor_types=['mummer-mum', 'mummer-mem', "bdbwt-ext-mini", "bdbwt-mem", 'minimap']
-#anchor_types=['mummer-mum', 'minimap']
 n = 50 #number of reads
-k=39 #minumum mem length, k-mer length, hox:minimap2 only allows max 28 as a k-mer size
+k=22 #minumum mem length, k-mer length, hox:minimap2 only allows max 28 as a k-mer size
 minimap_k = 28
 rule all:
     input:
         expand("results/{anchor_type}-summary.txt", anchor_type = anchor_types),
-        "results/anchor-summary.csv"
-        #expand("results/{anchor_type}-summary.txt", anchor_type = anchor_types)
-        #expand("results/mummer-mem/read{r}_result.txt", r = [_ for _ in range(0,n)]),
-        #expand("results/bdbwt-ext-mini/result{r}.txt", r = [_ for _ in range(0,n)]),
-        #expand("results/bdbwt-mem/read{r}_result.txt", r = [_ for _ in range(0,n)]),
-        #expand("results/minimap/read{r}_result.txt", r = [_ for _ in range(0,n)])
+        expand("results/anchors/{anchor_type}.csv", anchor_type = anchor_types)
 
 #generate reads with simlord
 rule generate_reads:
     input: target
     output: "data/test/ecoli_reads.fastq"
-    shell: "simlord  --read-reference {input[0]} -n {n} --no-sam  data/test/ecoli_reads"
+    shell: "simlord  --read-reference {input} -n {n} --no-sam  data/test/ecoli_reads"
 
 rule parse_reads:
     input: "data/test/ecoli_reads.fastq"
@@ -47,22 +36,50 @@ rule parse_reads:
                     f2.write(next(f))
                     j += 1
                     f2.close()
+
+def k_length(wildcards):
+    if config['constant_k']:
+        return k
+    read_properties = get_read_properties(f'data/test/reads/read{wildcards.r}.fasta')
+    total_error_probability = read_properties[4]
+    alpha = -math.log(1-total_error_probability)
+    C = (2+total_error_probability)/(1-2*alpha)
+    target_length = 4641652
+    return f'{int(C*math.log(target_length,4))}'
+
+def minimap_vairable_k_length(wildcards):
+    if config['constant_k']:
+        return k
+    read_properties = get_read_properties(f'data/test/reads/read{wildcards.r}.fasta')
+    total_error_probability = read_properties[4]
+    alpha = -math.log(1-total_error_probability)
+    C = (2+total_error_probability)/(1-2*alpha)
+    target_length = 4641652
+    if int(C*math.log(target_length,4)) < 28:
+        return f'{int(C*math.log(target_length,4))}'
+    else:
+        return f'28'
+
 #anchor computing
-rule benchmark_compute_mem_mummer:
+rule benchmark_compute_mem_mummer_variable_k:
     input: query, target
     output: "data/anchors/mummer_mem/read{r}.anchor"
-    shell: "./mummer/mummer -maxmatch -l {k} {input[0]} {input[1]} >> {output}"
+    params: k = k_length
+    shell: "./mummer/mummer -maxmatch -l {params.k} {input[0]} {input[1]} >> {output}"
 
 rule benchmark_compute_mum_mummer:
     input: query, target
     output: "data/anchors/mummer_mum/read{r}.anchor"
-    shell: "./mummer/mummer -mum -l {k} {input[0]} {input[1]} >> {output}"
+    params: k = k_length
+    shell: "./mummer/mummer -mum -l {params.k} {input[0]} {input[1]} >> {output}"
+
 
 rule generate_config_file_for_bdbwt_extended_minimizers:
     input: target, query
     output: "bdbwt-mem/configs/ext_min/config{r}"
+    params: k = k_length
     run:
-        get_congif_bdbwt_mem(output[0], input[0], input[1], get_k_length(input[1]), 1)
+        get_congif_bdbwt_mem(output[0], input[0], input[1], params.k, 1)
 
 rule benchmark_compute_extended_minimizers_bdbwt:
     input: "bdbwt-mem/configs/ext_min/config{r}"
@@ -72,8 +89,10 @@ rule benchmark_compute_extended_minimizers_bdbwt:
 rule generate_config_file_for_bdbwt_MEM:
     input: target, query
     output: "bdbwt-mem/configs/mem/config{r}"
+    params: k = k_length
     run:
-        get_congif_bdbwt_mem(output[0], input[0], input[1], get_k_length(input[1]), 0)
+        get_congif_bdbwt_mem(output[0], input[0], input[1], params.k, 0)
+
 
 rule benchmark_compute_MEM_bdbwt:
     input: "bdbwt-mem/configs/mem/config{r}"
@@ -82,8 +101,9 @@ rule benchmark_compute_MEM_bdbwt:
 
 rule benchmark_compute_minimap2_minimizers:
     input: query, target
-    output: "data/anchors/minimap/read{r}.min"
-    shell: "./minimap2/minimap2 -k {minimap_k} {input[0]} {input[1]} --print-seeds &>> {output}"
+    output: "data/anchors/minimap/read{r}.anchor"
+    params: k = minimap_vairable_k_length
+    shell: "./minimap2/minimap2 -k {params.k} {input[0]} {input[1]} --print-seeds &>> {output}"
 
 #format the anchors
 rule process_mem_mummer_anchors:
@@ -98,6 +118,11 @@ rule process_mem_mummer_anchors:
                     parts = line.split()
                     f2.write(f"{int(parts[1])-1},{int(parts[0])-1},{int(parts[2])}\n")
         f2.close()
+
+use rule process_mem_mummer_anchors as process_mem_mummer_anchors_constant_k with:
+    input: "data/anchors/constant_k/mummer_mem/read{r}.anchor"
+    output: "data/anchors/constant_k/mummer_mem-tidy/read{r}.anchor"
+
 rule process_mum_mummer_anchors:
     input: "data/anchors/mummer_mum/read{r}.anchor"
     output: "data/anchors/mummer_mum-tidy/read{r}.anchor"
@@ -110,6 +135,10 @@ rule process_mum_mummer_anchors:
                     parts = line.split()
                     f2.write(f"{int(parts[1])-1},{int(parts[0])-1},{int(parts[2])}\n")
         f2.close()
+
+use rule process_mum_mummer_anchors as process_mum_mummer_anchors_constant_k with:
+    input: "data/anchors/constant_k/mummer_mum/read{r}.anchor"
+    output: "data/anchors/constant_k/mummer_mum-tidy/read{r}.anchor"
 
 rule process_bdbwt_extended_min_anchors:
     input: "data/anchors/bdbwt-ext-mini/read{r}.anchor"
@@ -125,6 +154,10 @@ rule process_bdbwt_extended_min_anchors:
                 if line.strip() == "MEMs:":
                     write2 = True
         f2.close()
+
+use rule process_bdbwt_extended_min_anchors as process_bdbwt_extended_min_anchors_constant_k with:
+    input: "data/anchors/constant_k/bdbwt-ext-mini/read{r}.anchor"
+    output: "data/anchors/constant_k/bdbwt-ext-mini-tidy/read{r}.anchor"
 
 rule process_bdbwt_mem_anchors:
     input: "data/anchors/bdbwt-mem/read{r}.anchor"
@@ -179,7 +212,7 @@ rule benchmark_run_chainX_with_bdbwt_mem:
     shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
 
 rule benchmark_run_chainX_with_minimizers:
-    input: target, query, "data/anchors/minimap-tidy/read{r}.min"
+    input: target, query, "data/anchors/minimap-tidy/read{r}.anchor"
     benchmark: "benchmarks/chaining/minimap_mm{r}.tsv"
     output: "data/chains/minimap/chain{r}.txt"
     shell: "./ChainX/chainX -m sg -q {input[1]} -t {input[0]} --anchors {input[2]} >> {output}"
@@ -206,6 +239,10 @@ rule anchor_stats_extended_minimizers:
     run:
         anchor_stats(input, output[0], params.anchor_type)
 
+#use rule anchor_stats_extended_minimizers as anchor_stats_extended_minimizers_constant_k with:
+#    input: expand("data/anchors/contant_k/bdbwt-ext-mini-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
+#    output: "results/anchors/contant_k/bdbwt-ext-mini.csv"
+
 rule anchor_stats_bdbwt_mems:
     input: expand("data/anchors/bdbwt-mem-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
     output: "results/anchors/bdbwt-mem.csv"
@@ -214,21 +251,11 @@ rule anchor_stats_bdbwt_mems:
         anchor_stats(input, output[0], params.anchor_type)
 
 rule anchor_stats_minimap_mm:
-    input: expand("data/anchors/minimap-tidy/read{r}.min", r = [_ for _ in range(0,n)])
+    input: expand("data/anchors/minimap-tidy/read{r}.anchor", r = [_ for _ in range(0,n)])
     output: "results/anchors/minimap.csv"
     params: anchor_type = "minimap"
     run:
         anchor_stats(input, output[0], params.anchor_type)
-
-rule anchor_stats_summary:
-    input: expand("results/anchors/{anchor_type}.csv", anchor_type = anchor_types)
-    output: "results/anchor-summary.csv"
-    run:
-        dataframes = []
-        for file_path in input:
-            dataframes.append(pd.read_csv(file_path))
-        df = pd.concat(dataframes, ignore_index=True)
-        df.to_csv(output[0])
 
 #draw some figures, get the results
 rule results:
@@ -334,14 +361,6 @@ def get_congif_bdbwt_mem(output_file_path, target_file_path, query_file_path, k,
     f2.write("linearRMQ > 0")
     f2.close()
 
-def get_k_length(read_file_path):
-    read_properties = get_read_properties(read_file_path)
-    total_error_probability = read_properties[4]
-    alpha = -math.log(1-total_error_probability)
-    C = (2+total_error_probability)/(1-2*alpha)
-    target_length = 4641652
-    return int(C*math.log(target_length,4))
-
 
 def get_read_properties(read_file_path):
     with open(read_file_path) as f:
@@ -370,5 +389,5 @@ def anchor_stats(input, output, anchor_type):
 
     with open(output, 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(['type', 'sum of bases', 'number of anchors'])
-        csvwriter.writerow([anchor_type, sum_of_bases, number_of_anchors])
+        csvwriter.writerow(['type', 'sum of bases', 'number of anchors','avg sum of bases', 'avg number of anchors'])
+        csvwriter.writerow([anchor_type, sum_of_bases, number_of_anchors, sum_of_bases/n, number_of_anchors/n])
