@@ -33,6 +33,15 @@ TODO:
     > bdbwt is horrible computing mems when compared to chainX:s mummer, with e-coli.
 * compute MUMS
     > use the ChainX mummer implementation or implement ur own
-* k mer size dependent on the length of the sequence as in the paper. 22 for e coli 31 for huma
+* ~~k mer size dependent on the length of the sequence as in the paper. 22 for e coli 31 for huma~~
 * ~~report number of anchors and the sum of anchor bases.~~
-* compute the Jaccard index and draw siome figures
+* ~~compute the Jaccard index and draw siome figures~~
+
+Stats to report:
+* average length of reads
+* average number of anchor per chain
+* average length of anchor bases
+* average number of anchors per read
+* anchor coverage of read
+* chain coverage of read
+* Jaccard index (the shared bases between the chain and the read)/union of the chain and the read
