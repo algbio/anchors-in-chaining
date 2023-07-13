@@ -4,7 +4,7 @@
 
 [submodule "ChainX"]
 	path = ChainX
-	url = https://github.com/millakortelainen/algbio-ChainX.git
+	url = git@github.com:millakortelainen/algbio-ChainX.git
 
 [submodule "bdbwt-mem"]
 	path = bdbwt-mem
