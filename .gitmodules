@@ -1,3 +1,11 @@
 [submodule "minimap2"]
 	path = minimap2
 	url = https://github.com/millakortelainen/minimap2.git
+
+[submodule "ChainX"]
+	path = ChainX
+	url = https://github.com/millakortelainen/algbio-ChainX.git
+
+[submodule "bdbwt-mem"]
+	path = bdbwt-mem
+	url = https://github.com/millakortelainen/bdbwt-mem-chaining.git
