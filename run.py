@@ -31,7 +31,7 @@ DIRS = {'read': READS_DIR,
         f'config {BDBWT_EXT_MINI}': CONFIG_DIR_EXT_MINI,
         'chain': {x: f'{CHAIN_DIR}{x}/' for x in ANCHOR_ALGOS.keys()},
         'anchor': {x: f'{ANCHOR_DIR}{x}/' for x in ANCHOR_ALGOS.keys()},
-        'anchor-tidy': {x: f'{ANCHOR_DIR}{x}/' for x in ANCHOR_ALGOS.keys()}}
+        'anchor-tidy': {x: f'{TIDY_ANCHOR_DIR}{x}/' for x in ANCHOR_ALGOS.keys()}}
 
 READ_PATH = f'{READS_DIR}'+'read{0}.fasta'
 CONFIG_PATH = {BDBWT_MEM: DIRS[f"config {BDBWT_MEM}"]+'config{0}',
@@ -66,7 +66,7 @@ def init_directories():
                 os.makedirs(dir)
 
 
-def generate_congif_bdbwt_mem(output_file_path, target_file_path, query_file_path, k, mode, ):
+def generate_congif_bdbwt_mem(output_file_path, target_file_path, query_file_path, k, mode):
     f2 = open(output_file_path, 'w')
     f2.write(f"Verbosity > 4\n")
     f2.write(f"Text1	> {query_file_path}\n")
@@ -131,19 +131,19 @@ def get_read_properties(fastq_file_path):
 
 def parse_reads(fast=True):
     print('parsing reads')
-    if fast:
-        if os.path.isfile(READ_PATH.format('s')): return
-        i = 0
-        read=""
-        with open(f'{DATA_FOLDER}/reads.fastq') as f:
-            for line in f:
-                if line[0] == "@":
-                    read += f'{next(f).strip()}$'
-            i += 1
-        writer = open(READ_PATH.format('s'), 'w')
-        writer.write('>all the reads\n')
-        writer.write(read)
-        return
+    
+    if os.path.isfile(READ_PATH.format('s')): return
+    i = 0
+    read=""
+    with open(f'{DATA_FOLDER}/reads.fastq') as f:
+        for line in f:
+            if line[0] == "@":
+                read += f'{next(f).strip()}$'
+        i += 1
+    writer = open(READ_PATH.format('s'), 'w')
+    writer.write('>all the reads\n')
+    writer.write(read)
+    
     i = 0
     with open('data/reads.fastq') as f:
         for line in f:
@@ -153,7 +153,7 @@ def parse_reads(fast=True):
                 f2.write(next(f))
                 i += 1
                 f2.close()
-    return i
+    
 
 def run_bdbwt(mode, number_of_reads, k_values, target, fast=True):
     print(f'running bdbwt-mem for {mode}')
@@ -213,7 +213,7 @@ def run_chainx(number_of_reads, target_path):
         for i in range(number_of_reads):
             if not os.path.isfile(path.format(i)):
                 subprocess.run(
-                    f"./ChainX/chainX -m sg -q {READ_PATH.format(i)} -t {target_path} --anchors {TIDY_ANCHOR_PATH[type_of].format(i)} &>> {path.format(i)}", shell=True)
+                    f"./ChainX/chainX -m sg -q {READ_PATH.format(i)} -t {target_path} --anchors {TIDY_ANCHOR_PATH[type_of].format(i)} > {path.format(i)} 2>&1", shell=True)
 
 
 def parse_anchors(number_of_reads):
@@ -247,7 +247,7 @@ def parse_anchors(number_of_reads):
 
 
 def main(target="data/ecoli.fasta", constant_k=False, k=0, number_of_reads=10, coverage_of_reads=1.0):
-    fresh_run()
+    #fresh_run()
     # generate anchors
     init_directories()
     if number_of_reads > 0:
@@ -258,7 +258,7 @@ def main(target="data/ecoli.fasta", constant_k=False, k=0, number_of_reads=10, c
         if not os.path.isfile(f"{DATA_FOLDER}/reads.fastq"):
             subprocess.run(
                 f"simlord --read-reference {target} -c {coverage_of_reads} --no-sam data/reads", shell=True)
-    parse_reads()
+    parse_reads(False)
     read_properties = get_read_properties(f'{DATA_FOLDER}/reads.fastq')
     number_of_reads = len(read_properties)
     print(number_of_reads)
@@ -272,15 +272,15 @@ def main(target="data/ecoli.fasta", constant_k=False, k=0, number_of_reads=10, c
     else:
         k_values, minimap_k_values = init_variable_k(target, read_properties)
     
-    run_bdbwt(BDBWT_EXT_MINI, number_of_reads, k_values, target)
-    run_bdbwt(BDBWT_MEM, number_of_reads, k_values, target)
-    run_mummer(MUMMER_MEM, number_of_reads, k_values, target)
-    run_mummer(MUMMER_MUM, number_of_reads, k_values, target)
-    run_minimap(number_of_reads, minimap_k_values, target)
-    print('äend')
-    # parse_anchors(number_of_reads)
+    run_bdbwt(BDBWT_EXT_MINI, number_of_reads, k_values, target, False)
+    run_bdbwt(BDBWT_MEM, number_of_reads, k_values, target, False)
+    run_mummer(MUMMER_MEM, number_of_reads, k_values, target, False)
+    run_mummer(MUMMER_MUM, number_of_reads, k_values, target, False)
+    run_minimap(number_of_reads, minimap_k_values, target, False)
 
-    #run_chainx(number_of_reads, target)
+    parse_anchors(number_of_reads)
+
+    run_chainx(number_of_reads, target)
 
 
 if __name__ == '__main__':
