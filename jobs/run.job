@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --job-name=test_run
+#SBATCH --chdir=[/wrk-vakka/users/$USER/<directory>|/wrk-kappa/users/$USER/<directory>]
+#SBATCH -M [ukko|vorna|carrington|kale]
+#SBATCH -o result-%j.txt
+#SBATCH -p test
+#SBATCH -c 1
+#SBATCH -t 05:00
+#SBATCH --mem-per-cpu=100
+
+mkdir temporary-files-$SLURM_JOB_ID // This is the actual payload
+touch temporary-files-$SLURM_JOB_ID/tempfile // This is the actual payload
+hostname  // This is the actual payload
+sleep 60  // This is the actual payload
+
+module load Python
+python run.py -t data/ecoli.fasta -q data/readsread/$SLURM_ARRAY_TASK_ID.fasta -m 
