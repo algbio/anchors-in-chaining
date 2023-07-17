@@ -15,6 +15,7 @@ ANCHOR_ALGOS = {BDBWT_MEM: "./{2}bdbwt-mem/main {0} >> {1}",
                 MUMMER_MUM: "./{4}mummer/mummer -mum -l {0} {1} {2} >> {3}",
                 MUMMER_MEM: "./{4}mummer/mummer -maxmatch -l {0} {1} {2} >> {3}",
                 MINIMAP: "./{4}minimap2/minimap2 -k {0} {1} {2} --print-seeds > {3} 2>&1"}
+ANCHOR_RESULT_DIR = f'{RESULT_FOLDER}/anchors/'
 CONFIG_DIR_MEM = f'bdbwt-mem/configs/{BDBWT_MEM}/'
 CONFIG_DIR_EXT_MINI = f'bdbwt-mem/configs/{BDBWT_EXT_MINI}/'
 DIRS = {'read': READS_DIR,
@@ -33,3 +34,6 @@ TIDY_ANCHOR_PATH = {anchor_type: DIRS['anchor-tidy'][anchor_type] +
                     'read{0}.txt' for anchor_type in ANCHOR_ALGOS.keys()}
 CHAIN_PATH = {anchor_type: DIRS['chain'][anchor_type] +
               'read{0}.txt' for anchor_type in ANCHOR_ALGOS.keys()}
+RESULT_PATH = f'{RESULT_FOLDER}'
+ANCHOR_RESULT_PATH = f'{ANCHOR_RESULT_DIR}'+"{0}.txt"
+SUMMARY_PATH = f'{RESULT_FOLDER}chain-summary-'+"{0}.txt"
