@@ -4,7 +4,7 @@ MUMMER_MUM = 'mummer-mum'
 MUMMER_MEM = 'mummer_mem'
 MINIMAP = 'minimap'
 
-DATA_FOLDER = "anchors-in-chaining/data"
+DATA_FOLDER = "data"
 ANCHOR_DIR = f'{DATA_FOLDER}/anchors/'
 TIDY_ANCHOR_DIR = f'{DATA_FOLDER}/anchors-tidy/'
 CHAIN_DIR = f'{DATA_FOLDER}/chains/'
