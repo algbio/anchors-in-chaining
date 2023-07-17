@@ -11,7 +11,7 @@ CHAIN_DIR = f'{DATA_FOLDER}/chains/'
 READS_DIR = f'{DATA_FOLDER}/reads/'
 RESULT_FOLDER = 'results/'
 ANCHOR_ALGOS = {BDBWT_MEM: "./{2}bdbwt-mem/main {0} >> {1}",
-                BDBWT_EXT_MINI: "./{3}bdbwt-mem/main {0} >> {1}",
+                BDBWT_EXT_MINI: "./{2}bdbwt-mem/main {0} >> {1}",
                 MUMMER_MUM: "./{4}mummer/mummer -mum -l {0} {1} {2} >> {3}",
                 MUMMER_MEM: "./{4}mummer/mummer -maxmatch -l {0} {1} {2} >> {3}",
                 MINIMAP: "./{4}minimap2/minimap2 -k {0} {1} {2} --print-seeds > {3} 2>&1"}
