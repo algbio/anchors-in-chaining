@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=init_workload
+#SBATCH --job-name=init
 #SBATCH -M ukko
 #SBATCH -p short
 #SBATCH -c 4
