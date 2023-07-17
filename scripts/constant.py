@@ -23,7 +23,8 @@ DIRS = {'read': READS_DIR,
         f'config {BDBWT_EXT_MINI}': CONFIG_DIR_EXT_MINI,
         'chain': {x: f'{CHAIN_DIR}{x}/' for x in ANCHOR_ALGOS.keys()},
         'anchor': {x: f'{ANCHOR_DIR}{x}/' for x in ANCHOR_ALGOS.keys()},
-        'anchor-tidy': {x: f'{TIDY_ANCHOR_DIR}{x}/' for x in ANCHOR_ALGOS.keys()}}
+        'anchor-tidy': {x: f'{TIDY_ANCHOR_DIR}{x}/' for x in ANCHOR_ALGOS.keys()},
+        'results': ANCHOR_RESULT_DIR}
 
 READ_PATH = f'{READS_DIR}'+'read{0}.fasta'
 CONFIG_PATH = {BDBWT_MEM: DIRS[f"config {BDBWT_MEM}"]+'config{0}',

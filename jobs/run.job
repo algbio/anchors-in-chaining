@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=test_run
+#SBATCH --job-name=run
 #SBATCH -M ukko
 #SBATCH -p short
 #SBATCH -c 4
