@@ -66,7 +66,6 @@ def get_read_properties(fastq_file_path):
 
 def run_bdbwt(mode, read_id, k_value, target):
     print(f'running bdbwt-mem for {mode}')
-    print(CONFIG_PATH[mode])
     i = read_id
     print(f'read {i}')
     if not os.path.isfile(CONFIG_PATH[mode].format(i)):
