@@ -5,6 +5,7 @@ import argparse
 import subprocess
 from constant import *
 
+RUN_PATH = ''
 
 def generate_congif_bdbwt_mem(output_file_path, target_file_path, query_file_path, k, mode):
     f2 = open(output_file_path, 'w')
@@ -65,6 +66,7 @@ def get_read_properties(fastq_file_path):
 
 def run_bdbwt(mode, read_id, k_value, target):
     print(f'running bdbwt-mem for {mode}')
+    print(CONFIG_PATH[mode])
     i = read_id
     print(f'read {i}')
     if not os.path.isfile(CONFIG_PATH[mode].format(i)):
@@ -72,7 +74,7 @@ def run_bdbwt(mode, read_id, k_value, target):
             CONFIG_PATH[mode].format(i), target, READ_PATH.format(i), k_value, 0 if mode == BDBWT_MEM else 1)
     if not os.path.isfile(ANCHOR_PATH[mode].format(i)):
         subprocess.run(ANCHOR_ALGOS[mode].format(
-            CONFIG_PATH[mode].format(i), ANCHOR_PATH[mode].format(i)), shell=True)
+            CONFIG_PATH[mode].format(i), ANCHOR_PATH[mode].format(i), RUN_PATH), shell=True)
 
 
 def run_mummer(mode, read_id, k_value, target_path):
@@ -81,7 +83,7 @@ def run_mummer(mode, read_id, k_value, target_path):
     print(f'read {i}')
     if not os.path.isfile(ANCHOR_PATH[mode].format(i)):
         subprocess.run(ANCHOR_ALGOS[mode].format(
-            k_value, READ_PATH.format(i), target_path, ANCHOR_PATH[mode].format(i)), shell=True)
+            k_value, READ_PATH.format(i), target_path, ANCHOR_PATH[mode].format(i), RUN_PATH), shell=True)
 
 
 def run_minimap(read_id, k_value, target_path):
@@ -91,7 +93,7 @@ def run_minimap(read_id, k_value, target_path):
     print(f'read {i}')
     if not os.path.isfile(ANCHOR_PATH[MINIMAP].format(i)):
         subprocess.run(ANCHOR_ALGOS[MINIMAP].format(
-            k_value, READ_PATH.format(i), target_path, ANCHOR_PATH[MINIMAP].format(i)), shell=True)
+            k_value, READ_PATH.format(i), target_path, ANCHOR_PATH[MINIMAP].format(i), RUN_PATH), shell=True)
 
 
 def run_chainx(read_id, target_path):
@@ -100,7 +102,7 @@ def run_chainx(read_id, target_path):
         i = read_id
         if not os.path.isfile(path.format(i)):
             subprocess.run(
-                f"./ChainX/chainX -m sg -q {READ_PATH.format(i)} -t {target_path} --anchors {TIDY_ANCHOR_PATH[type_of].format(i)} >> {path.format(i)}", shell=True)
+                f"./{RUN_PATH}ChainX/chainX -m sg -q {READ_PATH.format(i)} -t {target_path} --anchors {TIDY_ANCHOR_PATH[type_of].format(i)} >> {path.format(i)}", shell=True)
 
 
 def parse_anchors(read_id):
@@ -162,10 +164,13 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--read_id", help="id of the input read")
     parser.add_argument("-k", "--k-size",
                         help="Size of constant k.", default=-1, type=int)
+    parser.add_argument("-p", "--path",
+                        help="path of run files", default='')
 
     args = parser.parse_args()
     target = args.target
     read_id = args.read_id
     k_size = args.k_size
+    RUN_PATH = args.path
 
     main(target, k_size, read_id)

@@ -9,4 +9,8 @@
 
 
 module load Python
+<<<<<<< HEAD
 python ../../../proj/kortemil/anchors-in-chaining/scripts/run.py -t data/ecoli.fasta -i $SLURM_ARRAY_TASK_ID
+=======
+python ../../../proj/kortemil/anchors-in-chaining/scripts/run.py -t data/ecoli.fasta -i $SLURM_ARRAY_TASK_ID -p ../../../proj/kortemil/anchors-in-chaining/
+>>>>>>> a0b3a3e82f7ddf198e3475829db5161ba6f10485
