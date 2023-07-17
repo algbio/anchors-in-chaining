@@ -28,28 +28,25 @@ def generate_congif_bdbwt_mem(output_file_path, target_file_path, query_file_pat
     f2.close()
 
 
-def init_variable_k(target, read_properties_dic):
+def init_variable_k(target, read_properties):
     print('generating variable k')
     target_length = 0
     with open(target) as f:
         for j, line in enumerate(f):
             if j != 0:
                 target_length += len(line.strip())
-    for _, read_properties in read_properties_dic.items():
-        total_error_probability = read_properties[4]
-        alpha = -math.log(1-total_error_probability)
-        C = (2+total_error_probability)/(1-2*alpha)
-        k = int(C*math.log(target_length, 4))
+    total_error_probability = read_properties[4]
+    alpha = -math.log(1-total_error_probability)
+    C = (2+total_error_probability)/(1-2*alpha)
+    k = int(C*math.log(target_length, 4))
 
     return k, k if k < 28 else 28
 
 
-def get_read_properties(fastq_file_path):
-    dic_read_properties = {}
-    i = 0
-    with open(fastq_file_path) as f:
+def get_read_properties(id):
+    with open(READ_PATH.format(id)) as f:
         for line in f:
-            if line[0] == "@":
+            if line[0] == ">":
                 read_properties = line.split(';')
                 read_length = int(re.findall("\d+", read_properties[1])[0])
                 read_start_position = int(
@@ -59,9 +56,8 @@ def get_read_properties(fastq_file_path):
                     "\d+", read_properties[4])[0])
                 total_error_probability = float(
                     re.findall("\d+.\d+", read_properties[5])[0])
-                dic_read_properties[i] = read_length, read_start_position, read_chromosome, number_of_errors, total_error_probability
-                i += 1
-    return dic_read_properties
+                read_properties = read_length, read_start_position, read_chromosome, number_of_errors, total_error_probability
+                return read_properties
 
 
 def run_bdbwt(mode, read_id, k_value, target):
@@ -135,7 +131,7 @@ def parse_anchors(read_id):
 
 
 def main(target, k, read_id):
-    read_properties = get_read_properties(f'{DATA_FOLDER}/reads.fastq')
+    read_properties = get_read_properties(read_id)
     if k>0:
         print('costant k')
         k_value = k
