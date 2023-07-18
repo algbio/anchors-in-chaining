@@ -29,8 +29,8 @@ def parse_reads():
     i = 0
     read = ""
     with open(f'{DATA_FOLDER}/reads.fastq') as f:
-        for line in f:
-            if line[0] == "@":
+        for j, line in enumerate(f):
+            if j%3 == 0:
                 read += f'{next(f).strip()}$'
         i += 1
     writer = open(READ_PATH.format('s'), 'w')
@@ -39,8 +39,8 @@ def parse_reads():
 
     i = 0
     with open('data/reads.fastq') as f:
-        for line in f:
-            if line[0] == "@":
+        for j, line in enumerate(f):
+            if j%3 == 0:
                 f2 = open(READ_PATH.format(i), 'w')
                 f2.write(f">{line[1:]}")
                 f2.write(next(f))
