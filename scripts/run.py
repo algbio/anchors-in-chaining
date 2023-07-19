@@ -62,7 +62,15 @@ def recall(anchors, read, target, target_path, mode, k_value, read_id):
     else:
         run_anchoring_algo(mode, read_id, k_value, target_path, ANCHOR_STATS_PATH[mode].format(
             read_id), ANCHOR_STATS_PATH[mode].format(read_id))
-
+    true_anchors = parse_anchors(mode, ANCHOR_STATS_PATH[mode].format(read_id))
+    true_positives = 0
+    retrieved_indexes = []
+    for a in anchors:
+        if true_anchors.count(a) == 0:
+            retrieved_indexes.append(true_anchors.index(a))
+        else:
+            true_positives += 1
+    return true_positives/(true_positives + len(true_anchors)-len(retrieved_indexes))
 
 # list of tuples
 def precision(anchors, read):
@@ -139,34 +147,36 @@ def run_chainx(read_id, target_path):
                       BENCHMARK_CHAIN_PATH[type_of].format(read_id))
 
 
-def parse_anchors(read_id):
+def parse_anchors(mode, input_path, output_path=''):
     print('parsing anchors')
-    i = read_id
-    for type_of, path in ANCHOR_PATH.items():
-        writer = open(TIDY_ANCHOR_PATH[type_of].format(i), 'w')
-        with open(path.format(i)) as f:
-            write = False
-            for line in f:
-                if type_of == BDBWT_EXT_MINI or type_of == BDBWT_MEM:
-                    if write:
-                        parts = line.split(',')
-                        writer.write(
-                            f"{int(parts[1])},{int(parts[0])},{int(parts[2])}\n")
-                    if line.strip() == "MEMs:":
-                        write = True
-                if type_of == MUMMER_MEM or type_of == MUMMER_MUM:
-                    if line[0] != ">":
-                        parts = line.split()
-                        writer.write(
-                            f"{int(parts[1])-1},{int(parts[0])-1},{int(parts[2])}\n")
-                if type_of == MINIMAP:
-                    if line[0:2] == 'SD':
-                        parts = line.split()
-                        x = int(parts[2])
-                        y = int(parts[4])
-                        k = int(parts[5])
-                        writer.write(f"{y-k+1},{x-k+1},{k}\n")
-            writer.close()
+    anchors = []
+    with open(input_path) as f:
+        write = False
+        for line in f:
+            if mode == BDBWT_EXT_MINI or mode == BDBWT_MEM:
+                if write:
+                    parts = line.split(',')
+                    anchors.append(((int(parts[1]), int(parts[0]) , int(parts[2]))))
+                if line.strip() == "MEMs:":
+                    write = True
+            if mode == MUMMER_MEM or mode == MUMMER_MUM:
+                if line[0] != ">":
+                    parts = line.split()
+                    anchors.append((int(parts[1])-1,int(parts[0])-1,int(parts[2])))
+            if mode == MINIMAP:
+                if line[0:2] == 'SD':
+                    parts = line.split()
+                    x = int(parts[2])
+                    y = int(parts[4])
+                    k = int(parts[5])
+                    anchors.append((y-k+1,x-k+1,k))
+        if output_path == '':
+            return anchors
+        
+        writer = open(output_path, 'w')
+        for x,y,l in anchors:
+            writer.write(f'{x},{y},{l}')
+        writer.close()
 
 
 def main(target, k, read_id):
