@@ -88,6 +88,7 @@ def chain_properties(chain):
     return chain_length
 
 def get_read_properties(read_file_path):
+    print(read_file_path)
     with open(read_file_path) as f:
         read_properties = f.readline().split(';')
         read_length = int(re.findall("\d+", read_properties[1])[0])
