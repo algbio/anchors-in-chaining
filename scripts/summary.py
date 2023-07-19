@@ -24,7 +24,9 @@ def summary(type_of):
         avg_jaccard_index_total = average_jaccard_index(chains_with_empty, reads)
         avg_jaccard_index_tidy = average_jaccard_index(chains, reads)
 
-        f2 = open(SUMMARY_PATH.format(type_of), 'w')
+        f2 = open(SUMMARY_PATH.format(type_of), 'a')
+        f2.write(f'{type_of}\n')
+        f2.write('chain summary \n')
         f2.write('total\n')
         f2.write(f'average read length: {avg_read_length_total}\n')
         f2.write(f'average number of anchors per chain: {avg_number_of_anchor_per_chain_total}\n')
@@ -38,6 +40,23 @@ def summary(type_of):
         f2.write(f'average chain coverage of read: {avg_chain_coverage_of_read_tidy}\n')
         f2.write(f'average jaccard index: {avg_jaccard_index_tidy}\n')
         f2.close()
+        runtime_summary(DIRS['benchmarks-chains'][type_of], type_of)
+
+def runtime_summary(input_folder, type_of):
+    times = []
+    for _, _, files in os.walk(input_folder):
+        for fi in files:
+            try:
+                read_number = re.findall(r"\d+", fi)[0]
+            except:
+                continue
+            with open(f'{input_folder}read{read_number}.txt') as f:
+                time = re.findall(r"\d+.\d+", f.readline())[0]
+            times.append(float(time))
+    avg_time = sum(times)/len(times)
+    writer =  open(SUMMARY_PATH.format(type_of), 'a')
+    writer.write(f'average runtime {avg_time} seconds\n')
+    writer.close()
 
 def avg_coverage(chains, reads):
     coverage_sum = 0
@@ -88,7 +107,8 @@ def anchor_stats(anchor_type):
     number_of_anchors_tidy = sum([len(x) for _,x in anchors_tidy.items()])
     average_number_of_anchors_per_read_tidy = average_number(anchors_tidy)
     average_length_of_anchors_tidy = average_length(anchors_tidy, True)
-    f22 = open(ANCHOR_RESULT_PATH.format(anchor_type), 'w')
+    f22 = open(SUMMARY_PATH.format(anchor_type), 'a')
+    f22.write('anchor summary\n')
     f22.write('total:\n')
     f22.write(f'total number of anchors: {number_of_anchors}\n')
     f22.write(f'average number of anchor per read: {average_number_of_anchors_per_read}\n')
@@ -99,7 +119,8 @@ def anchor_stats(anchor_type):
     f22.write(f'average number of anchor per read: {average_number_of_anchors_per_read_tidy}\n')
     f22.write(f'average base length of anchors: {average_length_of_anchors_tidy}\n')
     f22.close()
-    
+    runtime_summary(DIRS['benchmarks-anchors'][anchor_type], anchor_type)
+
 def get_reads(input_folder):
     dictionary_of_tuple_lists = {}
     for _, _, files in os.walk(input_folder):

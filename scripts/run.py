@@ -4,6 +4,8 @@ import os
 import argparse
 import subprocess
 from constant import *
+import time
+
 
 RUN_PATH = ''
 
@@ -68,18 +70,26 @@ def run_bdbwt(mode, read_id, k_value, target):
         generate_congif_bdbwt_mem(
             CONFIG_PATH[mode].format(i), target, READ_PATH.format(i), k_value, 0 if mode == BDBWT_MEM else 1)
     if not os.path.isfile(ANCHOR_PATH[mode].format(i)):
+        start_time = time.time()
         subprocess.run(ANCHOR_ALGOS[mode].format(
             CONFIG_PATH[mode].format(i), ANCHOR_PATH[mode].format(i), RUN_PATH), shell=True)
-
+        end_time = time.time()
+        writer = open(BENCHMARK_ANCHOR_PATH[mode].format(read_id), 'w')
+        writer.write("--- %s seconds ---" % (end_time - start_time))
+        writer.close()
 
 def run_mummer(mode, read_id, k_value, target_path):
     print(f'running mummer for {mode}')
     i = read_id
     print(f'read {i}')
     if not os.path.isfile(ANCHOR_PATH[mode].format(i)):
+        start_time = time.time()
         subprocess.run(ANCHOR_ALGOS[mode].format(
             k_value, READ_PATH.format(i), target_path, ANCHOR_PATH[mode].format(i), RUN_PATH), shell=True)
-
+        end_time = time.time()
+        writer = open(BENCHMARK_ANCHOR_PATH[mode].format(read_id), 'w')
+        writer.write("--- %s seconds ---" % (end_time - start_time))
+        writer.close()
 
 def run_minimap(read_id, k_value, target_path):
     print(f'running minimap ')
@@ -87,18 +97,26 @@ def run_minimap(read_id, k_value, target_path):
     i = read_id
     print(f'read {i}')
     if not os.path.isfile(ANCHOR_PATH[MINIMAP].format(i)):
+        start_time = time.time()
         subprocess.run(ANCHOR_ALGOS[MINIMAP].format(
             k_value, READ_PATH.format(i), target_path, ANCHOR_PATH[MINIMAP].format(i), RUN_PATH), shell=True)
-
+        end_time = time.time()
+        writer = open(BENCHMARK_ANCHOR_PATH[MINIMAP].format(read_id), 'w')
+        writer.write("--- %s seconds ---" % (end_time - start_time))
+        writer.close()
 
 def run_chainx(read_id, target_path):
     print('running chainX')
     for type_of, path in CHAIN_PATH.items():
         i = read_id
         if not os.path.isfile(path.format(i)):
+            start_time = time.time()
             subprocess.run(
                 f"./{RUN_PATH}ChainX/chainX -m sg -q {READ_PATH.format(i)} -t {target_path} --anchors {TIDY_ANCHOR_PATH[type_of].format(i)} >> {path.format(i)}", shell=True)
-
+            end_time = time.time()
+            writer = open(BENCHMARK_CHAIN_PATH[type_of].format(read_id), 'w')
+            writer.write("--- %s seconds ---" % (end_time - start_time))
+            writer.close()
 
 def parse_anchors(read_id):
     print('parsing anchors')
