@@ -7,7 +7,7 @@ from constant import *
 
 def fresh_run():
     for type_of, dir in DIRS.items():
-        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy' or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains':
+        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy' or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains' or type_of == 'anchor-stats':
             for _, sub_dir in dir.items():
                 shutil.rmtree(sub_dir, ignore_errors=True)
         else:
@@ -20,7 +20,7 @@ def clear_results():
 
 def init_directories():
     for type_of, dir in DIRS.items():
-        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy'  or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains':
+        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy'  or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains' or type_of == 'anchor-stats':
             for _, sub_dir in dir.items():
                 if not os.path.exists(sub_dir):
                     os.makedirs(sub_dir)

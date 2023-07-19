@@ -87,17 +87,6 @@ def chain_properties(chain):
         chain_length += l
     return chain_length
 
-def get_read_properties(read_file_path):
-    print(read_file_path)
-    with open(read_file_path) as f:
-        read_properties = f.readline().split(';')
-        read_length = int(re.findall("\d+", read_properties[1])[0])
-        read_start_position = int(re.findall("\d+",read_properties[2])[0])
-        read_chromosome = read_properties[3]
-        number_of_errors = int(re.findall("\d+",read_properties[4])[0])
-        total_error_probability = float(re.findall("\d+.\d+", read_properties[5])[0])
-        return read_length, read_start_position, read_chromosome, number_of_errors, total_error_probability
-
 def anchor_stats(anchor_type):
     anchors_total = get_tuple_list_from_file(DIRS['anchor-tidy'][anchor_type], True)
 
@@ -122,39 +111,7 @@ def anchor_stats(anchor_type):
     f22.close()
     runtime_summary(DIRS['benchmarks-anchors'][anchor_type], anchor_type)
 
-def get_reads(input_folder):
-    dictionary_of_tuple_lists = {}
-    for _, _, files in os.walk(input_folder):
-        for fi in files:
-            try:
-                read_number = re.findall(r"\d+", fi)[0]
-            except:
-                continue
-            read_properties = get_read_properties(f'{input_folder}{fi}') 
-            dictionary_of_tuple_lists[int(read_number)] = [(read_properties[1], 0, read_properties[0])]
-    return dictionary_of_tuple_lists
 
-def get_tuple_list_from_file(input_folder, include_empty = False):
-    dictionary_of_tuple_lists = {}
-    for _, _, files in os.walk(input_folder):
-        for fi in files:
-            read_number = re.findall(r"\d+", fi)[0]
-            with open(f'{input_folder}{fi}') as f:
-                tuple_list = []
-                for line in f:
-                    try:
-                        parts = re.findall(r"\d+", line)
-                        x = int(parts[0])
-                        y = int(parts[1])
-                        length = int(parts[2])
-                        tuple_list.append((x,y,length))
-                    except:
-                        continue
-            if  len(tuple_list)>0 and not include_empty:
-                dictionary_of_tuple_lists[int(read_number)] = tuple_list
-            elif include_empty:
-                dictionary_of_tuple_lists[int(read_number)] = tuple_list
-    return dictionary_of_tuple_lists
 
 #return average length of tuple list (a,b,l)
 #average length of reads, average length of anchors
