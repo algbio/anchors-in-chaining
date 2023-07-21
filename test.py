@@ -1,9 +1,11 @@
-import subprocess
+import pandas as pd
+import matplotlib.pyplot as plt
+df = pd.DataFrame({'Animal': ['Falcon', 'Falcon',
 
+                              'Parrot', 'Parrot'],
 
-#read0
-TARGET_STR = get_target('data/ecoli.fasta')
-start_pos = 350317
-length = 13111 
-sub = TARGET_STR[start_pos:start_pos+length]
-
+                   'Max Speed': [380., 370., 24., 26.]})
+grouped = df.groupby(['Animal']).mean()
+print(grouped)
+plt.plot([1,2],grouped['Max Speed'])
+plt.show()

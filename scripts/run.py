@@ -1,6 +1,4 @@
-import re
 import math
-import os
 import argparse
 import subprocess
 from constant import *
@@ -21,7 +19,7 @@ def generate_congif_bdbwt_mem(output_file_path, target_file_path, query_file_pat
     f2.write(f"Depth	> {k}\n")
     f2.write(f"Window 	> {k}\n")
     f2.write("Mergers > 0\n")
-    f2.write("BWTThrd > 0\n")
+    f2.write("BWTThrd > 1\n")
     f2.write("VerbCA  > 0\n")
     f2.write("VerbED > 0\n")
     f2.write("RawChain > 0\n")
@@ -41,13 +39,16 @@ def init_variable_k(target, read_properties):
     return k, k if k < 28 else 28
 
 
-def anchor_stats(k, mode, target, id, anchors):
-    precision_val = precision(anchors, get_read(id))
-    recall_val = recall(anchors, get_read(id), target)
-    return
+def anchor_stats(mode, target, k_value, id, anchors_path):
+    precision_val = precision(parse_anchors(mode, anchors_path), get_read(id))
+    #recall_val = recall(parse_anchors(mode, anchors_path), get_read(id), target, mode, k_value, id)
+    writer = open(ANCHOR_STATS_PATH[mode].format(read_id), 'w')
+    writer.write(f'{mode}: precision {precision_val}')
+    writer.close
+    return precision_val
 
 
-def recall(anchors, read, target, target_path, mode, k_value, read_id):
+def recall(anchors, read, target, mode, k_value, read_id):
     # run the anchoring algorithm for the read and the substring of read in the query
     read_start_pos = read[0]
     read_end_pos = read_start_pos + read[2]
@@ -57,33 +58,38 @@ def recall(anchors, read, target, target_path, mode, k_value, read_id):
     writer.write(temp)
     writer.close()
     if mode == BDBWT_EXT_MINI or mode == BDBWT_MEM:
-        run_anchoring_algo(mode, read_id, k_value, target_path, ANCHOR_STATS_PATH[mode].format(
-            read_id), ANCHOR_STATS_PATH[mode].format(read_id), False, config_path=ANCHOR_STATS_PATH[mode].format(f'config{read_id}'))
+        run_anchoring_algo(mode, read_id, k_value, target_path=ANCHOR_STATS_PATH[mode].format(
+            read_id), query_path=READ_PATH.format(read_id), output_path=ANCHOR_STATS_PATH[mode].format(
+            read_id), measure_time=False, config_path=ANCHOR_STATS_PATH[mode].format(f'config{read_id}'))
     else:
-        run_anchoring_algo(mode, read_id, k_value, target_path, ANCHOR_STATS_PATH[mode].format(
-            read_id), ANCHOR_STATS_PATH[mode].format(read_id))
+        run_anchoring_algo(mode, read_id, k_value, target_path=ANCHOR_STATS_PATH[mode].format(
+            read_id), query_path=READ_PATH.format(read_id), output_path=ANCHOR_STATS_PATH[mode].format(
+            read_id))
     true_anchors = parse_anchors(mode, ANCHOR_STATS_PATH[mode].format(read_id))
     true_positives = 0
     retrieved_indexes = []
     for a in anchors:
-        if true_anchors.count(a) == 0:
-            retrieved_indexes.append(true_anchors.index(a))
-        else:
+        if true_anchors.count(a) > 0:
             true_positives += 1
-    return true_positives/(true_positives + len(true_anchors)-len(retrieved_indexes))
+            retrieved_indexes.append(true_anchors.index(a))
 
-# list of tuples
+    return true_positives/len(true_anchors)
+
+
 def precision(anchors, read):
-    return len(true_positive_anchors(anchors, read))/len(anchors)
+    try:
+        return true_positive_anchors(anchors, read)/len(anchors)
+    except:
+        return 0
 
 
 def true_positive_anchors(anchors, read):
     read_start_pos = read[0]
     read_length = read[2]
-    true_positives = []
+    true_positives = 0
     for (t, q, l) in anchors:
         if read_start_pos <= t and t+l <= read_start_pos+read_length:
-            true_positives += (t, q, l)
+            true_positives += 1
     return true_positives
 
 
@@ -156,31 +162,33 @@ def parse_anchors(mode, input_path, output_path=''):
             if mode == BDBWT_EXT_MINI or mode == BDBWT_MEM:
                 if write:
                     parts = line.split(',')
-                    anchors.append(((int(parts[1]), int(parts[0]) , int(parts[2]))))
+                    anchors.append(
+                        ((int(parts[1]), int(parts[0]), int(parts[2]))))
                 if line.strip() == "MEMs:":
                     write = True
             if mode == MUMMER_MEM or mode == MUMMER_MUM:
                 if line[0] != ">":
                     parts = line.split()
-                    anchors.append((int(parts[1])-1,int(parts[0])-1,int(parts[2])))
+                    anchors.append(
+                        (int(parts[1])-1, int(parts[0])-1, int(parts[2])))
             if mode == MINIMAP:
                 if line[0:2] == 'SD':
                     parts = line.split()
                     x = int(parts[2])
                     y = int(parts[4])
                     k = int(parts[5])
-                    anchors.append((y-k+1,x-k+1,k))
+                    anchors.append((y-k+1, x-k+1, k))
         if output_path == '':
             return anchors
-        
+
         writer = open(output_path, 'w')
-        for x,y,l in anchors:
-            writer.write(f'{x},{y},{l}')
+        for x, y, l in anchors:
+            writer.write(f'{x},{y},{l}\n')
         writer.close()
 
 
-def main(target, k, read_id):
-    target_str = get_target(target)
+def main(target_path, k, read_id):
+    target_str = get_target(target_path)
     read_properties = get_read_properties(read_id)
     if k > 0:
         print('costant k')
@@ -192,20 +200,26 @@ def main(target, k, read_id):
     else:
         k_value, minimap_k_value = init_variable_k(target_str, read_properties)
 
-    run_anchoring_algo(BDBWT_EXT_MINI, read_id, k_value, target, READ_PATH.format(
+    run_anchoring_algo(BDBWT_EXT_MINI, read_id, k_value, target_path, READ_PATH.format(
         read_id), ANCHOR_PATH[BDBWT_EXT_MINI].format(read_id), True, CONFIG_PATH[BDBWT_EXT_MINI].format(read_id))
-    run_anchoring_algo(BDBWT_MEM, read_id, k_value, target, READ_PATH.format(
+    run_anchoring_algo(BDBWT_MEM, read_id, k_value, target_path, READ_PATH.format(
         read_id), ANCHOR_PATH[BDBWT_MEM].format(read_id), True, CONFIG_PATH[BDBWT_MEM].format(read_id))
-    run_anchoring_algo(MUMMER_MEM, read_id, k_value, target,
-                       READ_PATH.format(read_id), ANCHOR_PATH[MUMMER_MEM], True)
-    run_anchoring_algo(MUMMER_MUM, read_id, k_value, target,
-                       READ_PATH.format(read_id), ANCHOR_PATH[MUMMER_MUM], True)
-    run_anchoring_algo(MINIMAP, read_id, k_value, target,
-                       READ_PATH.format(read_id), ANCHOR_PATH[MINIMAP], True)
+    run_anchoring_algo(MUMMER_MEM, read_id, k_value, target_path,
+                       READ_PATH.format(read_id), ANCHOR_PATH[MUMMER_MEM].format(read_id), True)
+    run_anchoring_algo(MUMMER_MUM, read_id, k_value, target_path,
+                       READ_PATH.format(read_id), ANCHOR_PATH[MUMMER_MUM].format(read_id), True)
+    run_anchoring_algo(MINIMAP, read_id, minimap_k_value, target_path,
+                       READ_PATH.format(read_id), ANCHOR_PATH[MINIMAP].format(read_id), True)
 
-    parse_anchors(read_id)
+    for mode, path in TIDY_ANCHOR_PATH.items():
+        parse_anchors(mode, input_path=ANCHOR_PATH[mode].format(
+            read_id), output_path=path.format(read_id))
 
-    run_chainx(read_id, target)
+    for mode, path in ANCHOR_STATS_PATH.items():
+        anchor_stats(mode, target_str, k_value, read_id,
+                     ANCHOR_PATH[mode].format(read_id))
+
+    run_chainx(read_id, target_path)
 
 
 if __name__ == '__main__':
@@ -222,5 +236,9 @@ if __name__ == '__main__':
     read_id = args.read_id
     k_size = args.k_size
     RUN_PATH = args.path
-
+    if not os.path.isfile(f'{RESULT_FOLDER}info.txt'):
+        f2 = open(f'{RESULT_FOLDER}info.txt', 'w')
+        f2.write(f'k:{k_size}\n')
+        f2.write(f'genome: {target.split(".")[0]}')
+        f2.close()
     main(target, k_size, read_id)

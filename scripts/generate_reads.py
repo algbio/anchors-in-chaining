@@ -1,17 +1,17 @@
-import os
 import argparse
 import shutil
 import subprocess
 from constant import *
 
 
-def fresh_run():
+def fresh_run(clear_results = True):
     for type_of, dir in DIRS.items():
         if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy' or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains' or type_of == 'anchor-stats':
             for _, sub_dir in dir.items():
                 shutil.rmtree(sub_dir, ignore_errors=True)
         else:
-            shutil.rmtree(dir, ignore_errors=True)
+            if type_of != 'results' or clear_results:
+                shutil.rmtree(dir, ignore_errors=True)
 
 
 def clear_results():
@@ -65,6 +65,8 @@ if __name__ == '__main__':
                         help="number of reads", default=-1, type=int)
     parser.add_argument('-c', '--clear_only_results',
                         help='only clear result directory', action='store_true')
+    parser.add_argument('-ca', '--clear_all_but_results',
+                        help='clear all but results', action='store_true')
 
     args = parser.parse_args()
 
@@ -73,10 +75,13 @@ if __name__ == '__main__':
     coverage_of_reads = args.coverage
     number_of_reads = args.number
     only_clear_results = args.clear_only_results
+    all_but_results = args.clear_all_but_results
     if boolean_fresh_run:
         fresh_run()
     if only_clear_results:
         clear_results()
+    if all_but_results:
+        fresh_run(False)
     init_directories()
     if number_of_reads > 0:
         subprocess.run(

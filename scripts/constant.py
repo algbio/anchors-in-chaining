@@ -47,7 +47,8 @@ TIDY_ANCHOR_PATH = {anchor_type: DIRS['anchor-tidy'][anchor_type] +
                     'read{0}.txt' for anchor_type in ANCHOR_ALGOS.keys()}
 CHAIN_PATH = {anchor_type: DIRS['chain'][anchor_type] +
               'read{0}.txt' for anchor_type in ANCHOR_ALGOS.keys()}
-SUMMARY_PATH = f'{RESULT_FOLDER}'+"{0}.txt"
+CHAIN_SUMMARY_PATH = f'{RESULT_FOLDER}chain-summary'+'-{k}-{genome}.csv'
+ANCHOR_SUMMARY_PATH = f'{RESULT_FOLDER}anchor-summary'+'-{k}-{genome}.csv'
 BENCHMARK_ANCHOR_PATH = {anchor_type: DIRS['benchmarks-anchors']
                          [anchor_type] + 'read{0}.txt' for anchor_type in ANCHOR_ALGOS.keys()}
 BENCHMARK_CHAIN_PATH = {anchor_type: DIRS['benchmarks-chains']
