@@ -8,5 +8,4 @@
 
 module load Python
 source ../../../proj/kortemil/anchors/bin/activate
-python ../../../proj/kortemil/anchors-in-chaining/scripts/summary.py 
 python ../../../proj/kortemil/anchors-in-chaining/scripts/figures.py 
