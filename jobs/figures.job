@@ -7,5 +7,6 @@
 #SBATCH --mem-per-cpu=8G
 
 module load Python
+module load matplotlib
 source ../../../proj/kortemil/anchors/bin/activate
 python ../../../proj/kortemil/anchors-in-chaining/scripts/figures.py 
