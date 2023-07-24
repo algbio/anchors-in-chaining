@@ -180,11 +180,53 @@ def parse_anchors(mode, input_path, output_path=''):
                     anchors.append((y-k+1, x-k+1, k))
         if output_path == '':
             return anchors
+        write_anchors(anchors, output_path)
 
-        writer = open(output_path, 'w')
-        for x, y, l in anchors:
-            writer.write(f'{x},{y},{l}\n')
-        writer.close()
+        
+def write_anchors(anchors, output_path):
+    writer = open(output_path, 'w')
+    for x, y, l in anchors:
+        writer.write(f'{x},{y},{l}\n')
+    writer.close()
+
+def generate_ext_minimizers(mode, path_to_anchors, target, read, output_path):
+    anchors = parse_anchors(mode, path_to_anchors)
+    new_anchors = []
+    for x, y, length in anchors:
+        new_x = x
+        new_y = y
+        # try extend left
+        while True:
+            if target[new_x-1:x+length] == read[new_y-1:y+length]:
+                # match
+                new_x -= 1
+                new_y -= 1
+            else:
+                break
+        #try extend right
+        new_length = length
+        while True:
+            if target[new_x:x+length+1] == read[new_y:y+length+1]:
+                new_length += 1
+            else:
+                break
+        new_anchors.append((new_x, new_y, new_length))
+    write_anchors(output_path, new_anchors)
+
+
+def generate_MUMs(mode, path_to_anchors, output_path, read):
+    anchors = parse_anchors(mode, path_to_anchors)
+    anchor_counter = {}
+    for x,y,l in anchors:
+        if anchor_counter[read[y:y+l]] in anchor_counter.keys():
+            anchor_counter[read[y:y+l]] = (anchor_counter[read[y:y+l]][0]+1, (x,y,l))
+        else:
+            anchor_counter[read[y:y+l]] = (1,(x,y,l))
+    new_anchors = []
+    for _, n,position in anchor_counter.items():
+        if n == 1:
+            new_anchors.append(position)
+    write_anchors(output_path, new_anchors)
 
 
 def main(target_path, k, read_id):
@@ -210,6 +252,8 @@ def main(target_path, k, read_id):
                        READ_PATH.format(read_id), ANCHOR_PATH[MUMMER_MUM].format(read_id), True)
     run_anchoring_algo(MINIMAP, read_id, minimap_k_value, target_path,
                        READ_PATH.format(read_id), ANCHOR_PATH[MINIMAP].format(read_id), True)
+    generate_MUMs(BDBWT_MEM, ANCHOR_PATH[BDBWT_MEM].format(read_id), )
+    generate_ext_minimizers(ANCHOR_PATH[MINIMAP].format(read_id))
 
     for mode, path in TIDY_ANCHOR_PATH.items():
         parse_anchors(mode, input_path=ANCHOR_PATH[mode].format(
@@ -218,6 +262,7 @@ def main(target_path, k, read_id):
     for mode, path in ANCHOR_STATS_PATH.items():
         anchor_stats(mode, target_str, k_value, read_id,
                      ANCHOR_PATH[mode].format(read_id))
+        # write somewhere??
 
     run_chainx(read_id, target_path)
 

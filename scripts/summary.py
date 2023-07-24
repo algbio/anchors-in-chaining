@@ -158,7 +158,7 @@ def main():
                     k = 'var' if k_int < 0 else k_int
                 if line[:len('genome')] == 'genome':
                     genome = line.split(':')[1].split('/')[-1]
-        os.remove(f'{RESULT_FOLDER}info.txt')
+        #os.remove(f'{RESULT_FOLDER}info.txt')
     chain_summary_values = [['type', 'mode', 'avg_read_length', 'avg_number_of_anchors_per_chain',
                              'avg_number_of_chain_bases', 'avg_chain_coverage_of_read', 'avg_jaccard_index', 'avg_runtime']]
     reads = get_reads(READS_DIR)
