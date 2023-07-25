@@ -1,17 +1,23 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 from constant import *
+import seaborn as sns
 
+sns.set_theme()
 
 def main():
-
+    marker_symbols = ['o', 'v', 's', 'p', 'X', '*', 'D']
+    markers = dict(zip(ANCHOR_TYPES, marker_symbols))
     chain_results = {}
     anchor_results = {}
     for _, _, files in os.walk(RESULT_FOLDER):
         for fi in files:
             file_name_parts = fi.split('-')
-            k = file_name_parts[-2]
-            genome = file_name_parts[-1]
+            try:
+                k = file_name_parts[-2]
+                genome = file_name_parts[-1]
+            except:
+                continue
             key = f'{genome}, k: {k}'
             if 'anchor' in fi:
                 # is an anchor summary
@@ -27,20 +33,26 @@ def main():
 
     for mode in ['total', 'tidy']:
         for result_type in chain_df.columns[3:]:
-            for anchor_type in ANCHOR_ALGOS.keys():
+            for anchor_type in ANCHOR_TYPES:
                 plt.scatter(x, [df.groupby(['mode', 'type']).mean()[
-                            result_type][mode][anchor_type] for name, df in chain_results.items()], label=anchor_type)
-            plt.title(f'{result_type}, {mode}')
+                            result_type][mode][anchor_type] for name, df in chain_results.items()], 
+                            label=anchor_type,
+                            marker=markers[anchor_type],
+                            alpha = 0.7)
+            plt.title(f'{result_type.replace("_", " ")}, {mode}')
             plt.legend()
             plt.savefig(f'{RESULT_FOLDER}chain-{result_type}-{mode}.svg')
             plt.clf()
 
     for mode in ['total', 'tidy']:
         for result_type in anchor_df.columns[2:]:
-            for anchor_type in ANCHOR_ALGOS.keys():
+            for anchor_type in ANCHOR_TYPES:
                 plt.scatter(x, [df.groupby(['mode', 'type']).mean()[
-                            result_type][mode][anchor_type] for name, df in anchor_results.items()], label=anchor_type)
-            plt.title(f'{result_type}, {mode}')
+                            result_type][mode][anchor_type] for name, df in anchor_results.items()], 
+                            label=anchor_type.replace("-", " "),
+                            marker=markers[anchor_type],
+                            alpha = 0.7)
+            plt.title(f'{result_type.replace("_", " ")}, {mode}')
             plt.legend()
             plt.savefig(f'{RESULT_FOLDER}anchor-{result_type}-{mode}.svg')
             plt.clf()

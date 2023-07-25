@@ -34,7 +34,7 @@ DIRS = {'read': READS_DIR,
         f'config {BDBWT_EXT_MINI}': CONFIG_DIR_EXT_MINI,
         'chain': {x: f'{CHAIN_DIR}{x}/' for x in ANCHOR_TYPES},
         'anchor': {x: f'{ANCHOR_DIR}{x}/' for x in ANCHOR_TYPES},
-        'anchor-stats': {x: f'{ANCHOR_STATS_DIR}{x}/' for x in ANCHOR_TYPES},
+        'anchor-stats': ANCHOR_STATS_DIR,
         'anchor-tidy': {x: f'{TIDY_ANCHOR_DIR}{x}/' for x in ANCHOR_TYPES},
         'results': RESULT_FOLDER,
         'benchmarks-anchors': {x: f'{BENCHMARK_ANCHORS_DIR}{x}/' for x in ANCHOR_TYPES},
@@ -45,8 +45,7 @@ CONFIG_PATH = {BDBWT_MEM: DIRS[f"config {BDBWT_MEM}"]+'config{0}',
                BDBWT_EXT_MINI: DIRS[f"config {BDBWT_EXT_MINI}"]+'config{0}'}
 ANCHOR_PATH = {anchor_type: DIRS['anchor'][anchor_type] +
                'read{0}.txt' for anchor_type in ANCHOR_TYPES}
-ANCHOR_STATS_PATH = {anchor_type: DIRS['anchor-stats'][anchor_type] +
-                     'read{0}.txt' for anchor_type in ANCHOR_TYPES}
+ANCHOR_STATS_PATH = f'{ANCHOR_STATS_DIR}stat.csv'
 TIDY_ANCHOR_PATH = {anchor_type: DIRS['anchor-tidy'][anchor_type] +
                     'read{0}.txt' for anchor_type in ANCHOR_TYPES}
 CHAIN_PATH = {anchor_type: DIRS['chain'][anchor_type] +
@@ -59,7 +58,7 @@ BENCHMARK_CHAIN_PATH = {anchor_type: DIRS['benchmarks-chains']
                         [anchor_type] + 'read{0}.txt' for anchor_type in ANCHOR_TYPES}
 
 
-def get_target(target_path):
+def get_target(target_path: str) -> str:
     target = ''
     with open(target_path) as f:
         for j, line in enumerate(f):

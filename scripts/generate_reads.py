@@ -6,7 +6,7 @@ from constant import *
 
 def fresh_run(clear_results = True):
     for type_of, dir in DIRS.items():
-        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy' or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains' or type_of == 'anchor-stats':
+        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy' or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains':
             for _, sub_dir in dir.items():
                 shutil.rmtree(sub_dir, ignore_errors=True)
         else:
@@ -20,7 +20,7 @@ def clear_results():
 
 def init_directories():
     for type_of, dir in DIRS.items():
-        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy'  or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains' or type_of == 'anchor-stats':
+        if type_of == 'chain' or type_of == 'anchor' or type_of == 'anchor-tidy'  or type_of == 'benchmarks-anchors' or type_of == 'benchmarks-chains':
             for _, sub_dir in dir.items():
                 if not os.path.exists(sub_dir):
                     os.makedirs(sub_dir)
@@ -34,7 +34,7 @@ def parse_reads():
         return
     i = 0
     read = ""
-    with open(f'{DATA_FOLDER}/reads.fastq') as f:
+    with open(f'{DATA_FOLDER}reads.fastq') as f:
         for j, line in enumerate(f):
             if j % 3 == 0:
                 read += f'{next(f).strip()}$'

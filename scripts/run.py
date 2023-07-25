@@ -3,6 +3,7 @@ import argparse
 import subprocess
 from constant import *
 import time
+import csv
 
 
 RUN_PATH = ''
@@ -42,10 +43,7 @@ def init_variable_k(target, read_properties):
 def anchor_stats(mode, target, k_value, id, anchors_path):
     precision_val = precision(parse_anchors(mode, anchors_path), get_read(id))
     #recall_val = recall(parse_anchors(mode, anchors_path), get_read(id), target, mode, k_value, id)
-    writer = open(ANCHOR_STATS_PATH[mode].format(read_id), 'w')
-    writer.write(f'{mode}: precision {precision_val}')
-    writer.close
-    return precision_val
+    return id, len(parse_anchors(mode, anchors_path)),precision_val, mode
 
 
 def recall(anchors, read, target, mode, k_value, read_id):
@@ -178,18 +176,23 @@ def parse_anchors(mode, input_path, output_path=''):
                     y = int(parts[4])
                     k = int(parts[5])
                     anchors.append((y-k+1, x-k+1, k))
+            if mode == BDBWT_MUM or mode == EXTENDED_MINIMAP:
+                parts = line.split(',')
+                anchors.append((int(parts[0]), int(parts[1]), int(parts[2])))
         if output_path == '':
             return anchors
         write_anchors(anchors, output_path)
 
-        
+
 def write_anchors(anchors, output_path):
     writer = open(output_path, 'w')
     for x, y, l in anchors:
         writer.write(f'{x},{y},{l}\n')
     writer.close()
 
+
 def generate_ext_minimizers(mode, path_to_anchors, target, read, output_path):
+    print('generate extended minimizers')
     anchors = parse_anchors(mode, path_to_anchors)
     new_anchors = []
     for x, y, length in anchors:
@@ -203,30 +206,35 @@ def generate_ext_minimizers(mode, path_to_anchors, target, read, output_path):
                 new_y -= 1
             else:
                 break
-        #try extend right
+        # try extend right
         new_length = length
         while True:
-            if target[new_x:x+length+1] == read[new_y:y+length+1]:
+            if target[new_x:x+new_length+1] == read[new_y:y+new_length+1]:
                 new_length += 1
             else:
                 break
         new_anchors.append((new_x, new_y, new_length))
-    write_anchors(output_path, new_anchors)
+    write_anchors(new_anchors, output_path)
 
 
 def generate_MUMs(mode, path_to_anchors, output_path, read):
+    print('generating MUMs')
     anchors = parse_anchors(mode, path_to_anchors)
     anchor_counter = {}
-    for x,y,l in anchors:
-        if anchor_counter[read[y:y+l]] in anchor_counter.keys():
-            anchor_counter[read[y:y+l]] = (anchor_counter[read[y:y+l]][0]+1, (x,y,l))
+    for x, y, l in anchors:
+        if read[y:y+l] in anchor_counter.keys():
+            anchor_counter[read[y:y+l]
+                           ] = (anchor_counter[read[y:y+l]][0]+1, (x, y, l))
         else:
-            anchor_counter[read[y:y+l]] = (1,(x,y,l))
+            anchor_counter[read[y:y+l]] = (1, (x, y, l))
     new_anchors = []
-    for _, n,position in anchor_counter.items():
+    for _, (n, position) in anchor_counter.items():
         if n == 1:
             new_anchors.append(position)
-    write_anchors(output_path, new_anchors)
+    if output_path == '':
+        return new_anchors
+
+    write_anchors(new_anchors, output_path)
 
 
 def main(target_path, k, read_id):
@@ -241,7 +249,10 @@ def main(target_path, k, read_id):
             minimap_k_value = k
     else:
         k_value, minimap_k_value = init_variable_k(target_str, read_properties)
-
+    # print(
+    #    len(parse_anchors(BDBWT_MEM, ANCHOR_PATH[BDBWT_MEM].format(read_id))))
+    # print(
+    #    len(parse_anchors(BDBWT_MUM, ANCHOR_PATH[BDBWT_MUM].format(read_id))))
     run_anchoring_algo(BDBWT_EXT_MINI, read_id, k_value, target_path, READ_PATH.format(
         read_id), ANCHOR_PATH[BDBWT_EXT_MINI].format(read_id), True, CONFIG_PATH[BDBWT_EXT_MINI].format(read_id))
     run_anchoring_algo(BDBWT_MEM, read_id, k_value, target_path, READ_PATH.format(
@@ -252,17 +263,26 @@ def main(target_path, k, read_id):
                        READ_PATH.format(read_id), ANCHOR_PATH[MUMMER_MUM].format(read_id), True)
     run_anchoring_algo(MINIMAP, read_id, minimap_k_value, target_path,
                        READ_PATH.format(read_id), ANCHOR_PATH[MINIMAP].format(read_id), True)
-    generate_MUMs(BDBWT_MEM, ANCHOR_PATH[BDBWT_MEM].format(read_id), )
-    generate_ext_minimizers(ANCHOR_PATH[MINIMAP].format(read_id))
+    generate_MUMs(BDBWT_MEM, ANCHOR_PATH[BDBWT_MEM].format(
+        read_id), ANCHOR_PATH[BDBWT_MUM].format(read_id), get_target(READ_PATH.format(read_id)))
+    generate_ext_minimizers(MINIMAP, ANCHOR_PATH[MINIMAP].format(read_id), target_str, get_target(
+        READ_PATH.format(read_id)), ANCHOR_PATH[EXTENDED_MINIMAP].format(read_id))
 
     for mode, path in TIDY_ANCHOR_PATH.items():
         parse_anchors(mode, input_path=ANCHOR_PATH[mode].format(
             read_id), output_path=path.format(read_id))
 
-    for mode, path in ANCHOR_STATS_PATH.items():
-        anchor_stats(mode, target_str, k_value, read_id,
+    if not os.path.isfile(ANCHOR_STATS_PATH):
+        with open(ANCHOR_STATS_PATH, 'a', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(['read_number', 'number_of_anchors', 'precision', 'mode'])
+
+    for mode, _ in TIDY_ANCHOR_PATH.items():
+        stats = anchor_stats(mode, target_str, k_value, read_id,
                      ANCHOR_PATH[mode].format(read_id))
-        # write somewhere??
+        with open(ANCHOR_STATS_PATH, 'a', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(stats)
 
     run_chainx(read_id, target_path)
 
@@ -275,12 +295,15 @@ if __name__ == '__main__':
                         help="Size of constant k.", default=-1, type=int)
     parser.add_argument("-p", "--path",
                         help="path of run files", default='')
+    parser.add_argument(
+        "--read_range", help='run on multiple reads', default=-1, type=int)
 
     args = parser.parse_args()
     target = args.target
     read_id = args.read_id
     k_size = args.k_size
     RUN_PATH = args.path
+    read_range = args.read_range
     if not os.path.isfile(f'{RESULT_FOLDER}info.txt'):
         f2 = open(f'{RESULT_FOLDER}info.txt', 'w')
         f2.write(f'k:{k_size}\n')

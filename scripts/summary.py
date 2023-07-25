@@ -1,6 +1,7 @@
 from constant import *
 from collections import deque
 import csv
+import pandas as pd
 import shutil
 
 
@@ -15,7 +16,10 @@ def runtime_summary(input_folder):
             with open(f'{input_folder}read{read_number}.txt') as f:
                 time = re.findall(r"\d+.\d+", f.readline())[0]
             times.append(float(time))
-    avg_time = sum(times)/len(times)
+    try:
+        avg_time = sum(times)/len(times)
+    except:
+        avg_time = 0
     return avg_time
 
 
@@ -57,10 +61,23 @@ def anchor_stats(anchor_type, include_empty):
         DIRS['anchor-tidy'][anchor_type], include_empty)
 
     number_of_anchors = sum([len(x) for _, x in anchors.items()])
-    average_number_of_anchors_per_read = average_number(anchors)
     average_length_of_anchors = average_length(anchors, True)
     run_time = runtime_summary(DIRS['benchmarks-anchors'][anchor_type])
-    return [anchor_type, 'total' if include_empty else 'tidy', number_of_anchors, average_number_of_anchors_per_read, average_length_of_anchors, run_time]
+    if include_empty:
+        df = pd.read_csv(ANCHOR_STATS_PATH)
+    else:
+        df = pd.read_csv(ANCHOR_STATS_PATH)
+        df = df[df['number_of_anchors'] > 0]
+    averages = df.groupby('mode').mean()
+
+    return [anchor_type,  # type
+            'total' if include_empty else 'tidy',  # mode
+            number_of_anchors,  # number_of_anchors
+            averages['number_of_anchors'][anchor_type],  # average_number_of_anchors_per_read
+            average_length_of_anchors,  # average_length_of_anchors
+            averages['precision'][anchor_type],  # average_precision
+            run_time  # run_time
+            ] 
 
 
 # return average length of tuple list (a,b,l)
@@ -158,23 +175,27 @@ def main():
                     k = 'var' if k_int < 0 else k_int
                 if line[:len('genome')] == 'genome':
                     genome = line.split(':')[1].split('/')[-1]
-        #os.remove(f'{RESULT_FOLDER}info.txt')
+        # os.remove(f'{RESULT_FOLDER}info.txt')
     chain_summary_values = [['type', 'mode', 'avg_read_length', 'avg_number_of_anchors_per_chain',
                              'avg_number_of_chain_bases', 'avg_chain_coverage_of_read', 'avg_jaccard_index', 'avg_runtime']]
     reads = get_reads(READS_DIR)
-    anchor_summary_values = [['type', 'mode', 'number_of_anchors',
-                              'average_number_of_anchors_per_read', 'average_length_of_anchors', 'run_time']]
-    for type_of in ANCHOR_ALGOS.keys():
+    anchor_summary_values = [['type', 
+                              'mode', 
+                              'number_of_anchors',
+                              'average_number_of_anchors_per_read', 
+                              'average_length_of_anchors', 'average_precision', 
+                              'run_time']]
+    for type_of in ANCHOR_TYPES:
         chain_summary_values.append(results(type_of, True, reads))
         chain_summary_values.append(results(type_of, False, reads))
         anchor_summary_values.append(anchor_stats(type_of, True))
         anchor_summary_values.append(anchor_stats(type_of, False))
     with open(CHAIN_SUMMARY_PATH.format(k=k, genome=genome), 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerows(chain_summary_values)
+       csvwriter = csv.writer(csvfile)
+       csvwriter.writerows(chain_summary_values)
     with open(ANCHOR_SUMMARY_PATH.format(k=k, genome=genome), 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerows(anchor_summary_values)
+       csvwriter = csv.writer(csvfile)
+       csvwriter.writerows(anchor_summary_values)
 
 
 if __name__ == '__main__':
