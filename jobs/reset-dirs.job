@@ -3,8 +3,9 @@
 #SBATCH -M ukko
 #SBATCH -p short
 #SBATCH -c 4
-#SBATCH -t 01:00
+#SBATCH -t 10:00
 #SBATCH --mem-per-cpu=1G
 
 module load Python
+source ../../../proj/kortemil/anchors/bin/activate
 python ../../../proj/kortemil/anchors-in-chaining/scripts/generate_reads.py -t data/ecoli.fasta -ca

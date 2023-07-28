@@ -40,8 +40,8 @@ def main():
                             marker=markers[anchor_type],
                             alpha = 0.7)
             plt.title(f'{result_type.replace("_", " ")}, {mode}')
-            plt.legend()
-            plt.savefig(f'{RESULT_FOLDER}chain-{result_type}-{mode}.svg')
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.savefig(f'{RESULT_FOLDER}chain-{result_type}-{mode}.svg', bbox_inches = 'tight')
             plt.clf()
 
     for mode in ['total', 'tidy']:
@@ -53,9 +53,10 @@ def main():
                             marker=markers[anchor_type],
                             alpha = 0.7)
             plt.title(f'{result_type.replace("_", " ")}, {mode}')
-            plt.legend()
-            plt.savefig(f'{RESULT_FOLDER}anchor-{result_type}-{mode}.svg')
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.savefig(f'{RESULT_FOLDER}anchor-{result_type}-{mode}.svg', bbox_inches = 'tight')
             plt.clf()
+
     # read stats
     # avg read length
     # avg error probability

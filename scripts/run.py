@@ -43,7 +43,7 @@ def init_variable_k(target, read_properties):
 def anchor_stats(mode, target, k_value, id, anchors_path):
     precision_val = precision(parse_anchors(mode, anchors_path), get_read(id))
     #recall_val = recall(parse_anchors(mode, anchors_path), get_read(id), target, mode, k_value, id)
-    return id, len(parse_anchors(mode, anchors_path)),precision_val, mode
+    return id, len(parse_anchors(mode, anchors_path)), precision_val, mode
 
 
 def recall(anchors, read, target, mode, k_value, read_id):
@@ -275,11 +275,12 @@ def main(target_path, k, read_id):
     if not os.path.isfile(ANCHOR_STATS_PATH):
         with open(ANCHOR_STATS_PATH, 'a', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(['read_number', 'number_of_anchors', 'precision', 'mode'])
+            csvwriter.writerow(
+                ['read_number', 'number_of_anchors', 'precision', 'mode'])
 
     for mode, _ in TIDY_ANCHOR_PATH.items():
         stats = anchor_stats(mode, target_str, k_value, read_id,
-                     ANCHOR_PATH[mode].format(read_id))
+                             ANCHOR_PATH[mode].format(read_id))
         with open(ANCHOR_STATS_PATH, 'a', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(stats)
@@ -309,4 +310,8 @@ if __name__ == '__main__':
         f2.write(f'k:{k_size}\n')
         f2.write(f'genome: {target.split(".")[0]}')
         f2.close()
-    main(target, k_size, read_id)
+    if read_range > 0:
+        for i in range(read_range):
+            main(target, k_size, f'{i}')
+    else:
+        main(target, k_size, read_id)

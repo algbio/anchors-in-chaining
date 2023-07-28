@@ -2,7 +2,6 @@ from constant import *
 from collections import deque
 import csv
 import pandas as pd
-import shutil
 
 
 def runtime_summary(input_folder):
@@ -76,6 +75,7 @@ def anchor_stats(anchor_type, include_empty):
             averages['number_of_anchors'][anchor_type],  # average_number_of_anchors_per_read
             average_length_of_anchors,  # average_length_of_anchors
             averages['precision'][anchor_type],  # average_precision
+            df[(df['mode'] == anchor_type) & (df['number_of_anchors'] == 0)].shape[0], #'number_of_reads_without_anchors',
             run_time  # run_time
             ] 
 
@@ -175,6 +175,9 @@ def main():
                     k = 'var' if k_int < 0 else k_int
                 if line[:len('genome')] == 'genome':
                     genome = line.split(':')[1].split('/')[-1]
+    else:
+        genome = 'test'
+        k='test'
         # os.remove(f'{RESULT_FOLDER}info.txt')
     chain_summary_values = [['type', 'mode', 'avg_read_length', 'avg_number_of_anchors_per_chain',
                              'avg_number_of_chain_bases', 'avg_chain_coverage_of_read', 'avg_jaccard_index', 'avg_runtime']]
@@ -183,7 +186,9 @@ def main():
                               'mode', 
                               'number_of_anchors',
                               'average_number_of_anchors_per_read', 
-                              'average_length_of_anchors', 'average_precision', 
+                              'average_length_of_anchors', 
+                              'average_precision', 
+                              'number_of_reads_without_anchors',
                               'run_time']]
     for type_of in ANCHOR_TYPES:
         chain_summary_values.append(results(type_of, True, reads))

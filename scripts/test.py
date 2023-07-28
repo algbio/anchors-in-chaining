@@ -13,7 +13,7 @@ def main():
     for i, pos in enumerate(start_pos):
         read = target[pos:pos+read_length]
         writer = open('data/reads.fastq', 'a')
-        writer.write(f'@m0/13111/CCS Read={i};length={read_length}bp;startpos={pos};chromosome=U00096.3;numberOfErrors=0;totalErrorProb=0;passes=0;passesLeft=0;passesRight=0;cutPosition=0\n')
+        writer.write(f'@m0/13111/CCS Read={i};length={read_length}bp;startpos={pos};chromosome=U00096.3;numberOfErrors=0;totalErrorProb=0.0;passes=0;passesLeft=0;passesRight=0;cutPosition=0\n')
         writer.write(f'{read}\n')
         writer.write('x\n')
         writer.write('XXX\n')
