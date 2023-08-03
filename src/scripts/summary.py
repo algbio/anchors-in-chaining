@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from constant import *
 from collections import deque
 import csv
@@ -33,19 +34,31 @@ def avg_coverage(chains, reads):
 
 
 def average_jaccard_index(chains, reads):
+    # print(chains)
     jaccard_sum = 0
     for i, chain in chains.items():
-        jaccard_sum += jaccard_index(reads[i][0][2], chain)
+        value = jaccard_index(reads[i][0][0], reads[i][0][2], chain)
+        jaccard_sum += value
+        print(value)
+
+    print(jaccard_sum)
     try:
         return jaccard_sum/len(chains)
     except:
         return 0
 
 
-def jaccard_index(read_length, chain):
-    chain_coverage_of_read = coverage(chain, 1)
-    total_coverage = coverage(chain, 0) - chain_coverage_of_read + read_length
-    return chain_coverage_of_read/total_coverage
+def jaccard_index(read_start_pos, read_length, chain):
+    # print(read_start_pos)
+    # print(read_length)
+    # print(chain)
+    intersection_val = intersection(chain, read_start_pos, read_length)
+
+    #print(intersection_val)
+    chain_length = coverage(chain, 1)
+    # print(chain_length)
+    # print(read_length+1)
+    return intersection_val/(read_length+1 + chain_length - intersection_val)
 
 
 def chain_properties(chain):
@@ -72,12 +85,15 @@ def anchor_stats(anchor_type, include_empty):
     return [anchor_type,  # type
             'total' if include_empty else 'tidy',  # mode
             number_of_anchors,  # number_of_anchors
-            averages['number_of_anchors'][anchor_type],  # average_number_of_anchors_per_read
+            # average_number_of_anchors_per_read
+            averages['number_of_anchors'][anchor_type],
             average_length_of_anchors,  # average_length_of_anchors
             averages['precision'][anchor_type],  # average_precision
-            df[(df['mode'] == anchor_type) & (df['number_of_anchors'] == 0)].shape[0], #'number_of_reads_without_anchors',
-            run_time  # run_time
-            ] 
+            df[(df['mode'] == anchor_type) & (df['number_of_anchors'] == 0)
+               ].shape[0],  # 'number_of_reads_without_anchors',
+            run_time,  # run_time
+            averages['k_value'][anchor_type]  # 'k_value'
+            ]
 
 
 # return average length of tuple list (a,b,l)
@@ -101,11 +117,65 @@ def average_number(input_dic):
     except:
         return 0
 
-# a position in target, b position in query, get coverage of target sequence, assume that index is sorted by the start position
-# if last end position < cur start position, pop the anchor
+
+def intersection(chain, read_start_pos, length) -> int:
+    # compute an intersection of chain and string
+    # a position in target, b position in query,
+    read_end_pos = read_start_pos + length
+    if len(chain) == 0:
+        return 0
+    chain.sort(key=lambda x: x[0])
+    intersection_size = 0
+    previous_positions = deque()
+
+    for a, b, l in chain:
+        if a + l-1 < read_start_pos:
+            continue
+        if a > read_end_pos:
+            break
+        offset = 0
+        if a < read_start_pos:
+            offset += abs(a-read_start_pos)
+        if a+l-1 > read_end_pos:
+            offset += abs(a+l-1 - read_end_pos)
+
+        if len(previous_positions) == 0:
+            previous_positions.append((a, b, l))
+            intersection_size += l - offset
+            continue
+
+        cur_pos = a
+        pre_a, pre_b, pre_l = previous_positions[-1]
+        pre_pos = pre_a
+
+        if pre_pos+pre_l > cur_pos+l:
+            continue
+        if pre_pos+pre_l-1 > cur_pos:
+            # overlap
+            overlap_size = pre_pos + pre_l - cur_pos
+            intersection_size += l - overlap_size - offset
+            previous_positions.append((a, b, l))
+        else:
+            # no overlap
+            intersection_size += l - offset
+        # remove all that are not in range
+        while len(previous_positions) > 0:
+            a2, b2, l2 = previous_positions[0]
+            pos2 = a2
+            if pos2 + l2-1 <= cur_pos:
+                previous_positions.popleft()
+            else:
+                break
+        if len(previous_positions) == 0:
+            previous_positions.append((a, b, l))
+    print(intersection_size)
+    return intersection_size
 
 
-def coverage(input_list, index=0):
+def coverage(input_list, index=0) -> int:
+    # get coverage (intersection) of target sequence,
+    # assume that index is sorted by the start position
+    # if last end position < cur start position, pop the anchor
     if len(input_list) == 0:
         return 0
     if index == 0:
@@ -116,7 +186,7 @@ def coverage(input_list, index=0):
 
     coverage = input_list[0][2]
     for a, b, l in input_list[1:]:
-
+        # print((a,b,l))
         if index == 0:
             cur_pos = a
         else:
@@ -175,32 +245,39 @@ def main():
                     k = 'var' if k_int < 0 else k_int
                 if line[:len('genome')] == 'genome':
                     genome = line.split(':')[1].split('/')[-1]
+        os.remove(f'{RESULT_FOLDER}info.txt')
     else:
         genome = 'test'
-        k='test'
-        # os.remove(f'{RESULT_FOLDER}info.txt')
-    chain_summary_values = [['type', 'mode', 'avg_read_length', 'avg_number_of_anchors_per_chain',
-                             'avg_number_of_chain_bases', 'avg_chain_coverage_of_read', 'avg_jaccard_index', 'avg_runtime']]
+        k = 'test'
+    chain_summary_values = [['type',
+                             'mode',
+                             'avg_read_length',
+                             'avg_number_of_anchors_per_chain',
+                             'avg_number_of_chain_bases',
+                             'avg_chain_coverage_of_read',
+                             'avg_jaccard_index',
+                             'avg_runtime']]
     reads = get_reads(READS_DIR)
-    anchor_summary_values = [['type', 
-                              'mode', 
+    anchor_summary_values = [['type',
+                              'mode',
                               'number_of_anchors',
-                              'average_number_of_anchors_per_read', 
-                              'average_length_of_anchors', 
-                              'average_precision', 
+                              'average_number_of_anchors_per_read',
+                              'average_length_of_anchors',
+                              'average_precision',
                               'number_of_reads_without_anchors',
-                              'run_time']]
+                              'run_time',
+                              'k_value']]
     for type_of in ANCHOR_TYPES:
         chain_summary_values.append(results(type_of, True, reads))
         chain_summary_values.append(results(type_of, False, reads))
         anchor_summary_values.append(anchor_stats(type_of, True))
         anchor_summary_values.append(anchor_stats(type_of, False))
     with open(CHAIN_SUMMARY_PATH.format(k=k, genome=genome), 'w', newline='') as csvfile:
-       csvwriter = csv.writer(csvfile)
-       csvwriter.writerows(chain_summary_values)
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerows(chain_summary_values)
     with open(ANCHOR_SUMMARY_PATH.format(k=k, genome=genome), 'w', newline='') as csvfile:
-       csvwriter = csv.writer(csvfile)
-       csvwriter.writerows(anchor_summary_values)
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerows(anchor_summary_values)
 
 
 if __name__ == '__main__':
