@@ -5,8 +5,8 @@
 #SBATCH -c 4
 #SBATCH -t 05:00
 #SBATCH --mem-per-cpu=1G
-#SBATCH -a 0-564
+#SBATCH -a 0-9999
 
 module load Python
 source ../../../proj/kortemil/anchors/bin/activate
-python ../../../proj/kortemil/anchors-in-chaining/scripts/run.py -t data/ecoli.fasta -i $SLURM_ARRAY_TASK_ID -p ../../../proj/kortemil/anchors-in-chaining/
+python ../../../proj/kortemil/anchors-in-chaining/src/scripts/run.py -t data/ecoli.fasta -i $SLURM_ARRAY_TASK_ID -p ../../../proj/kortemil/anchors-in-chaining/

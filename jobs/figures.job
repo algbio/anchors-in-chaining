@@ -9,4 +9,4 @@
 module load Python
 module load matplotlib
 source ../../../proj/kortemil/anchors/bin/activate
-python ../../../proj/kortemil/anchors-in-chaining/scripts/figures.py 
+python ../../../proj/kortemil/anchors-in-chaining/src/scripts/figures.py 

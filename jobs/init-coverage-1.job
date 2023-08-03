@@ -8,4 +8,4 @@
 
 module load Python
 source ../../../proj/kortemil/anchors/bin/activate
-python ../../../proj/kortemil/anchors-in-chaining/scripts/generate_reads.py -t data/ecoli.fasta -f -rc 1
+python ../../../proj/kortemil/anchors-in-chaining/src/scripts/generate_reads.py -t data/ecoli.fasta -f -rc 1
