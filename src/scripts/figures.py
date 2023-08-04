@@ -3,7 +3,7 @@ import pandas as pd
 from constant import *
 import seaborn as sns
 
-sns.set_theme()
+sns.set()
 
 
 def main():
