@@ -39,9 +39,7 @@ def average_jaccard_index(chains, reads):
     for i, chain in chains.items():
         value = jaccard_index(reads[i][0][0], reads[i][0][2], chain)
         jaccard_sum += value
-        print(value)
 
-    print(jaccard_sum)
     try:
         return jaccard_sum/len(chains)
     except:
@@ -168,7 +166,7 @@ def intersection(chain, read_start_pos, length) -> int:
                 break
         if len(previous_positions) == 0:
             previous_positions.append((a, b, l))
-    print(intersection_size)
+ 
     return intersection_size
 
 
