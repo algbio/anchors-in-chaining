@@ -12,7 +12,7 @@ BR_INDEX_MEM = 'br-index-mem'
 BR_INDEX_MUM = 'br-index-mum'
 ANCHOR_TYPES = [BDBWT_MEM, BDBWT_EXT_MINI, BDBWT_MUM,
                 MUMMER_MEM, MUMMER_MUM, MINIMAP, EXTENDED_MINIMAP,
-                BR_INDEX_MEM, BR_INDEX_MUM]
+                BR_INDEX_MEM]
 
 DATA_FOLDER = "data/"
 ANCHOR_DIR = f'{DATA_FOLDER}anchors/'

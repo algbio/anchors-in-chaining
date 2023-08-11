@@ -200,7 +200,7 @@ def generate_MUMs(anchors, output_path, read):
         return new_anchors
 
     write_anchors(new_anchors, output_path)
-
+    
 
 def main(target_path, k, read_id, test_mode):
     target_str = get_target(target_path)
@@ -274,14 +274,7 @@ def main(target_path, k, read_id, test_mode):
                     print(f'target:{target_str[a:a+l]}')
                     print(f'read: {read_str[b:b+l]}')
 
-    # run chainX
     run_chainx(read_id, target_path)
-    #y-k+1, x-k+1, k
-
-    # print(read_str[93-25+1:93])
-    # print(target_str[707749-25+1:707749])
-    #print(read_str[93-25+1:93] == target_str[707749-25+1:707749])
-    # minimap only reports minimizers, but not the actual matches
 
 
 if __name__ == '__main__':
@@ -296,7 +289,7 @@ if __name__ == '__main__':
                         help="path of run files", default='')
     parser.add_argument(
         "--read_range", help='run on multiple reads', default=-1, type=int)
-
+    
     args = parser.parse_args()
     target = args.target
     read_id = args.read_id
@@ -305,11 +298,14 @@ if __name__ == '__main__':
     read_range = args.read_range
     test_mode = args.test_mode
 
+
+    
     if not os.path.isfile(f'{RESULT_FOLDER}info.txt'):
         f2 = open(f'{RESULT_FOLDER}info.txt', 'w')
         f2.write(f'k:{k_size}\n')
         f2.write(f'genome: {target.split(".")[0]}')
         f2.close()
+        
     if read_range > 0:
         for i in range(read_range):
             main(target, k_size, f'{i}', test_mode)

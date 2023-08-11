@@ -2,8 +2,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from constant import *
 import seaborn as sns
+import numpy as np
 
 sns.set()
+sns.color_palette("bright")
 
 
 def main():
@@ -20,7 +22,7 @@ def main():
                 genome = file_name_parts[-1]
             except:
                 continue
-            key = f'{genome}, k: {k}'
+            key = f'k: {k}'
             if 'anchor' in fi:
                 # is an anchor summary
                 anchor_df = pd.read_csv(f'{RESULT_FOLDER}{fi}')
@@ -32,38 +34,41 @@ def main():
 
     for name in chain_results.keys():
         x.append(name)
-
+    
+    x_values = np.arange(len(x))
+  
     for mode in ['total', 'tidy']:
         for result_type in chain_df.columns[3:]:
+            jitter = -0.2
             for anchor_type in ANCHOR_TYPES:
-                plt.scatter(x, [df.groupby(['mode', 'type']).mean()[
+                plt.scatter([val_x + jitter  for val_x in x_values], 
+                            [df.groupby(['mode', 'type']).mean()[
                             result_type][mode][anchor_type] for name, df in chain_results.items()],
                             label=anchor_type,
-                            marker=markers[anchor_type],
-                            alpha=0.7)
-            plt.title(f'{result_type.replace("_", " ")}, {mode}')
+                            marker=markers[anchor_type])
+                jitter += 0.4/7
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.xticks(x_values, x)
             plt.savefig(
                 f'{RESULT_FOLDER}/chain-{result_type}-{mode}.svg', bbox_inches='tight')
             plt.clf()
 
     for mode in ['total', 'tidy']:
         for result_type in anchor_df.columns[2:]:
+            jitter = -0.2
             for anchor_type in ANCHOR_TYPES:
-                plt.scatter(x, [df.groupby(['mode', 'type']).mean()[
+                plt.scatter([val_x + jitter  for val_x in x_values], [df.groupby(['mode', 'type']).mean()[
                             result_type][mode][anchor_type] for name, df in anchor_results.items()],
                             label=anchor_type.replace("-", " "),
-                            marker=markers[anchor_type],
-                            alpha=0.7)
-            plt.title(f'{result_type.replace("_", " ")}, {mode}')
+                            marker=markers[anchor_type])
+                jitter += 0.4/7
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.xticks(x_values, x)
             plt.savefig(
                 f'{RESULT_FOLDER}/anchor-{result_type}-{mode}.svg', bbox_inches='tight')
             plt.clf()
 
-    # read stats
-    # avg read length
-    # avg error probability
+
     reads = get_reads(READS_DIR)
     total_read_lengths = 0
     total_number_of_errors = 0

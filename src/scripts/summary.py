@@ -125,7 +125,7 @@ def intersection(chain, read_start_pos, length) -> int:
     chain.sort(key=lambda x: x[0])
     intersection_size = 0
     previous_positions = deque()
-
+    overlap = False
     for a, b, l in chain:
         if a + l-1 < read_start_pos:
             continue
@@ -149,7 +149,10 @@ def intersection(chain, read_start_pos, length) -> int:
         if pre_pos+pre_l > cur_pos+l:
             continue
         if pre_pos+pre_l-1 > cur_pos:
+            if not overlap:
             # overlap
+                print('overlap!')
+                overlap=True
             overlap_size = pre_pos + pre_l - cur_pos
             intersection_size += l - overlap_size - offset
             previous_positions.append((a, b, l))
@@ -266,6 +269,7 @@ def main():
                               'run_time',
                               'k_value']]
     for type_of in ANCHOR_TYPES:
+        print(type_of)
         chain_summary_values.append(results(type_of, True, reads))
         chain_summary_values.append(results(type_of, False, reads))
         anchor_summary_values.append(anchor_stats(type_of, True))
